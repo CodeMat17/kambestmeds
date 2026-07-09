@@ -39,9 +39,16 @@ export const metadata: Metadata = {
       "Trusted herbal solutions — rooted in nature, proven in results. Explore KAMBEST's tradomedical products and services.",
     url: "https://www.kambestmeds.com",
     siteName: "KAMBEST Tradomedical Center",
-    images: ["/about1.webp"],
+    images: ["/opengraph-image.jpg"],
     locale: "en_NG",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KAMBEST Tradomedical Center | Natural Healing, Real Results",
+    description:
+      "Trusted herbal solutions — rooted in nature, proven in results. Explore KAMBEST's tradomedical products and services.",
+    images: ["/opengraph-image.jpg"],
   },
   icons: { icon: "/favicon.ico" },
 };
