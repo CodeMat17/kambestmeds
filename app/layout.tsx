@@ -17,14 +17,14 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.kambestmeds.com"),
   title: {
-    default: "KAMBEST Tradomedical Center | Natural Healing, Real Results",
-    template: "%s | KAMBEST Tradomedical Center",
+    default: "KAMBEST Tradomedical Services | Natural Healing, Real Results",
+    template: "%s | KAMBEST Tradomedical Services",
   },
   description:
     "KAMBEST Tradomedical Services offers trusted herbal solutions for fibroid, hepatitis, liver detox, fertility and more — natural healing, real results, rooted in Nigerian tradomedical expertise.",
   keywords: [
     "KAMBEST tradomedical",
-    "tradomedical center Nigeria",
+    "tradomedical Services Nigeria",
     "herbal medicine Port Harcourt",
     "trado medical Lekki Lagos",
     "fibroid cure herbal",
@@ -34,21 +34,21 @@ export const metadata: Metadata = {
     "buy herbal medicine online Nigeria",
   ],
   openGraph: {
-    title: "KAMBEST Tradomedical Center | Natural Healing, Real Results",
+    title: "KAMBEST Tradomedical Services | Natural Healing, Real Results",
     description:
       "Trusted herbal solutions — rooted in nature, proven in results. Explore KAMBEST's tradomedical products and services.",
     url: "https://www.kambestmeds.com",
-    siteName: "KAMBEST Tradomedical Center",
-    images: ["/opengraph-image.jpg"],
+    siteName: "KAMBEST Tradomedical Services",
+    images: ["/opengraph-image_v2.jpg"],
     locale: "en_NG",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "KAMBEST Tradomedical Center | Natural Healing, Real Results",
+    title: "KAMBEST Tradomedical Services | Natural Healing, Real Results",
     description:
       "Trusted herbal solutions — rooted in nature, proven in results. Explore KAMBEST's tradomedical products and services.",
-    images: ["/opengraph-image.jpg"],
+    images: ["/opengraph-image_v2.jpg"],
   },
   icons: { icon: "/favicon.ico" },
 };
