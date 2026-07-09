@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
     "/privacy",
     "/terms",
   "/products",
+  "/admin-access"
 ]);
 
 const isAdminRoute = createRouteMatcher(["/dashboard", "/dashboard/(.*)"]);

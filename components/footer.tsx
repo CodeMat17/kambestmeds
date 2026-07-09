@@ -8,7 +8,6 @@ import { buildWhatsAppLink, WHATSAPP_NUMBER } from "@/lib/whatsapp";
 import { FACEBOOK_URL } from "@/lib/contact";
 import { FacebookIcon } from "@/components/icons/facebook-icon";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
-import { AdminAccessDialog } from "@/components/admin-access-dialog";
 
 const quickLinks = [
   { href: "/", label: "Home" },
@@ -128,11 +127,9 @@ export function Footer() {
               Terms
             </Link>
             {!isDashboard && (
-              <AdminAccessDialog>
-                <button type='button' className='hover:text-primary'>
-                  Admin
-                </button>
-              </AdminAccessDialog>
+              <Link href='/admin-access' className='hover:text-primary'>
+                Admin
+              </Link>
             )}
           </div>
         </div>
