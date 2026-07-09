@@ -31,7 +31,11 @@
       "Bash(tasklist)",
       "Bash(taskkill //F //IM node.exe)",
       "Bash(node --max-old-space-size=4096 ./node_modules/.bin/tsc --noEmit -p .)",
-      "Bash(node --max-old-space-size=4096 ./node_modules/typescript/lib/tsc.js --noEmit -p .)"
+      "Bash(node --max-old-space-size=4096 ./node_modules/typescript/lib/tsc.js --noEmit -p .)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000)",
+      "Bash(pkill -f \"next dev\")"
     ]
   }
 }
