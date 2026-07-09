@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node_modules/.bin/next --version)",
+      "Bash(npx shadcn@latest add navigation-menu label separator badge avatar skeleton select --yes)",
+      "Bash(npx eslint *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3100/)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"home:%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"about:%{http_code}\\\\n\" http://localhost:3000/about-us)",
+      "Bash(curl -s -o /dev/null -w \"products:%{http_code}\\\\n\" http://localhost:3000/products)",
+      "Bash(curl -s -o /dev/null -w \"contact:%{http_code}\\\\n\" http://localhost:3000/contact-us)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"console.log\\(require\\('convex/package.json'\\).version\\)\")",
+      "Bash(cat next.config.ts)",
+      "Bash(cat next.config.js)",
+      "Bash(cat next.config.mjs)",
+      "Bash(npm ls *)",
+      "Bash(npm pack *)",
+      "Bash(mkdir -p \"node_modules_target/@img/sharp-linux-arm64\")",
+      "Bash(mkdir -p \"node_modules_target/@img/sharp-libvips-linux-arm64\")",
+      "Bash(cp -r extract/package/* \"node_modules_target/@img/sharp-linux-arm64/\")",
+      "Bash(cp -r extract2/package/* \"node_modules_target/@img/sharp-libvips-linux-arm64/\")",
+      "Bash(find 'C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-USER-Documents-projects-kambest\\\\17f8048a-1ec1-4757-a736-0f8097ac01b1\\\\scratchpad' -iname sharp-linux-arm64-pkg* -maxdepth 3)",
+      "Bash(cp -r 'C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-USER-Documents-projects-kambest\\\\17f8048a-1ec1-4757-a736-0f8097ac01b1\\\\scratchpad/extract3/package/.' 'c:\\\\Users\\\\USER\\\\Documents\\\\projects\\\\kambest/node_modules/@img/sharp-linux-arm64/')",
+      "Bash(cp -r 'C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-USER-Documents-projects-kambest\\\\17f8048a-1ec1-4757-a736-0f8097ac01b1\\\\scratchpad/extract2/package/.' 'c:\\\\Users\\\\USER\\\\Documents\\\\projects\\\\kambest/node_modules/@img/sharp-libvips-linux-arm64/')",
+      "Bash(node -e ' *)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")",
+      "Bash(yarn lint *)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\" //V)",
+      "Bash(tasklist)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(node --max-old-space-size=4096 ./node_modules/.bin/tsc --noEmit -p .)",
+      "Bash(node --max-old-space-size=4096 ./node_modules/typescript/lib/tsc.js --noEmit -p .)"
+    ]
+  }
+}
