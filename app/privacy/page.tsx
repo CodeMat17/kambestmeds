@@ -14,7 +14,15 @@ const fallback = {
 };
 
 export default async function PrivacyPage() {
-  const content = (await fetchQuery(api.content.get, { key: "privacy" })) ?? fallback;
+  let content: { title: string; body: string } = fallback;
+  try {
+    const result = await fetchQuery(api.content.get, { key: "privacy" });
+    if (result?.title && result?.body) {
+      content = { title: result.title, body: result.body };
+    }
+  } catch (error) {
+    console.error("Failed to load privacy content from Convex:", error);
+  }
   const body = DOMPurify.sanitize(content.body, {
     ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "h2", "h3"],
     ALLOWED_ATTR: ["href", "target", "rel"],

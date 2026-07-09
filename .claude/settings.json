@@ -35,7 +35,9 @@
       "Skill(run)",
       "Skill(run:*)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000)",
-      "Bash(pkill -f \"next dev\")"
+      "Bash(pkill -f \"next dev\")",
+      "Bash(grep -rn \"runtime\" next.config.* middleware.ts)",
+      "Bash(cat next.config.*)"
     ]
   }
 }

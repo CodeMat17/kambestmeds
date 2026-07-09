@@ -14,7 +14,15 @@ const fallback = {
 };
 
 export default async function TermsPage() {
-  const content = (await fetchQuery(api.content.get, { key: "terms" })) ?? fallback;
+  let content: { title: string; body: string } = fallback;
+  try {
+    const result = await fetchQuery(api.content.get, { key: "terms" });
+    if (result?.title && result?.body) {
+      content = { title: result.title, body: result.body };
+    }
+  } catch (error) {
+    console.error("Failed to load terms content from Convex:", error);
+  }
   const body = DOMPurify.sanitize(content.body, {
     ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "h2", "h3"],
     ALLOWED_ATTR: ["href", "target", "rel"],
