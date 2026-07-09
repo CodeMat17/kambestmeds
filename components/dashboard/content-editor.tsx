@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/dashboard/rich-text-editor";
+import { ensureJimpDecodable } from "@/lib/image";
 
 type ContentKey = "about-us" | "terms" | "privacy";
 type ValueItem = { title: string; body: string };
@@ -70,6 +71,7 @@ function useHeroUpload() {
   const optimizeUpload = useAction(api.images.optimizeUpload);
 
   async function upload(file: File) {
+    file = await ensureJimpDecodable(file);
     const uploadUrl = await generateUploadUrl();
     const res = await fetch(uploadUrl, {
       method: "POST",

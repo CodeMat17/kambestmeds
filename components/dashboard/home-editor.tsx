@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
+import { ensureJimpDecodable } from "@/lib/image";
 
 type FeatureItem = { title: string; body: string };
 type TestimonialItem = { quote: string; name: string; place: string };
@@ -112,6 +113,7 @@ function useHeroUpload() {
   const optimizeUpload = useAction(api.images.optimizeUpload);
 
   async function upload(file: File) {
+    file = await ensureJimpDecodable(file);
     const uploadUrl = await generateUploadUrl();
     const res = await fetch(uploadUrl, {
       method: "POST",

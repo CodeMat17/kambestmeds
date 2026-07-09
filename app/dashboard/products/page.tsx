@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ensureJimpDecodable } from "@/lib/image";
 
 const DEFAULT_AMOUNT = "5000";
 
@@ -83,6 +84,7 @@ export default function ProductsDashboardPage() {
   }
 
   async function uploadImage(file: File) {
+    file = await ensureJimpDecodable(file);
     const uploadUrl = await generateUploadUrl();
     const res = await fetch(uploadUrl, {
       method: "POST",
