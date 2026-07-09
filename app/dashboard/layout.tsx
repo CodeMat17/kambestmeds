@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
+import { Show, UserButton } from "@clerk/nextjs";
 
 const links = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -43,6 +44,9 @@ export default function DashboardLayout({
           </p>
         </div>
         <div className='hidden sm:flex items-center gap-2'>
+          <Show when='signed-in'>
+            <UserButton />
+          </Show>
           <ThemeToggle />
           <Button variant='outline' size='sm' render={<Link href='/' />}>
             <ArrowLeft className='size-4' />
@@ -56,6 +60,9 @@ export default function DashboardLayout({
             Back to Site
           </Button>
           <ThemeToggle />
+          <Show when='signed-in'>
+            <UserButton />
+          </Show>
         </div>
       </div>
       <nav className='mt-6 flex flex-wrap gap-2 border-b border-border/60 pb-4'>
