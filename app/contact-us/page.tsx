@@ -37,9 +37,9 @@ export default async function ContactUsPage() {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "KAMBEST Tradomedical Center",
-    image: "https://www.kambesttrado.com/about1.webp",
+    image: "https://www.kambestmeds.com/about1.webp",
     telephone: PHONE_NUMBERS,
-    email: CONTACT_EMAIL,
+    ...(CONTACT_EMAIL ? { email: CONTACT_EMAIL } : {}),
     address: ADDRESSES.map((a) => ({
       "@type": "PostalAddress",
       streetAddress: a.text,

@@ -18,7 +18,7 @@ export function ContactForm() {
       toast.error("Please fill in your name and message.");
       return;
     }
-    const text = `Hi KAMBEST, my name is ${name}. ${message}`;
+    const text = `Hello KAMBEST, my name is ${name}. ${message}`;
     window.open(buildWhatsAppLink(WHATSAPP_NUMBER, text), "_blank", "noopener,noreferrer");
     toast.success("Redirecting to WhatsApp…");
     setName("");

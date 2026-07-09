@@ -12,4 +12,4 @@ export const ADDRESSES = [
 ];
 
 export const PHONE_NUMBERS = ["08033591663", "08035720060"];
-export const CONTACT_EMAIL = "info@kambesttrado.com";
+export const CONTACT_EMAIL = "";

@@ -38,7 +38,7 @@ export function ProductCard({ product }: { product: ProductView }) {
       toast.error("Please fill in your name and a valid quantity.");
       return;
     }
-    const message = `Hi, I'd like to order: ${product.name}, Qty: ${qty}, Name: ${orderName}`;
+    const message = `Hello KAMBEST, I'd like to order: ${product.name}, Qty: ${qty}, Name: ${orderName}`;
     window.open(buildWhatsAppLink(WHATSAPP_NUMBER, message), "_blank", "noopener,noreferrer");
     toast.success("Redirecting to WhatsApp…");
     setOrderOpen(false);
@@ -52,7 +52,7 @@ export function ProductCard({ product }: { product: ProductView }) {
       toast.error("Please fill in your name and your question.");
       return;
     }
-    const message = `Hi, I have a question about: ${product.name}. ${enquiryText} — From ${enquiryName}`;
+    const message = `Hello KAMBEST, I have a question about: ${product.name}. ${enquiryText} — From ${enquiryName}`;
     window.open(buildWhatsAppLink(WHATSAPP_NUMBER, message), "_blank", "noopener,noreferrer");
     toast.success("Redirecting to WhatsApp…");
     setEnquiryOpen(false);

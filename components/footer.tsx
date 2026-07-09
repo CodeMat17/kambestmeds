@@ -100,12 +100,6 @@ export function Footer() {
                 08035720060
               </a>
             </li>
-            {/* <li className="flex gap-2">
-              <Mail className="mt-0.5 size-4 shrink-0 text-primary" />
-              <a href="mailto:info@kambesttrado.com" className="hover:text-primary">
-                info@kambesttrado.com
-              </a>
-            </li> */}
             <li className='flex gap-2'>
               <WhatsAppIcon className='mt-0.5 size-4 shrink-0 text-primary' />
               <a

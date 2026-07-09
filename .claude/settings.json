@@ -37,7 +37,10 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000)",
       "Bash(pkill -f \"next dev\")",
       "Bash(grep -rn \"runtime\" next.config.* middleware.ts)",
-      "Bash(cat next.config.*)"
+      "Bash(cat next.config.*)",
+      "Bash(ls -la .env*)",
+      "Bash(cat .env.local)",
+      "Bash(cat .env.example)"
     ]
   }
 }

@@ -15,7 +15,7 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.kambesttrado.com"),
+  metadataBase: new URL("https://www.kambestmeds.com"),
   title: {
     default: "KAMBEST Tradomedical Center | Natural Healing, Real Results",
     template: "%s | KAMBEST Tradomedical Center",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     title: "KAMBEST Tradomedical Center | Natural Healing, Real Results",
     description:
       "Trusted herbal solutions — rooted in nature, proven in results. Explore KAMBEST's tradomedical products and services.",
-    url: "https://www.kambesttrado.com",
+    url: "https://www.kambestmeds.com",
     siteName: "KAMBEST Tradomedical Center",
     images: ["/about1.webp"],
     locale: "en_NG",
