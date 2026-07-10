@@ -4,9 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MapPin, Phone } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { buildWhatsAppLink, WHATSAPP_NUMBER } from "@/lib/whatsapp";
-import { FACEBOOK_URL } from "@/lib/contact";
+import { FACEBOOK_URL, INSTAGRAM_URL } from "@/lib/contact";
 import { FacebookIcon } from "@/components/icons/facebook-icon";
+import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 
 const quickLinks = [
@@ -20,6 +23,9 @@ export function Footer() {
   const year = new Date().getFullYear();
   const pathname = usePathname();
   const isDashboard = pathname === "/dashboard";
+  const contact = useQuery(api.contactInfo.get, {});
+  const facebookUrl = contact?.facebookUrl || FACEBOOK_URL;
+  const instagramUrl = contact?.instagramUrl || INSTAGRAM_URL;
 
   return (
     <footer className='border-t border-border/60 bg-secondary/40'>
@@ -37,14 +43,24 @@ export function Footer() {
             Natural healing, real results. Trusted herbal solutions — rooted in
             nature, proven in results.
           </p>
-          <Link
-            href={FACEBOOK_URL}
-            target='_blank'
-            rel='noopener noreferrer'
-            aria-label='Kambest on Facebook'
-            className='mt-4 inline-flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground'>
-            <FacebookIcon className='size-10' />
-          </Link>
+          <div className='mt-4 flex gap-3'>
+            <Link
+              href={facebookUrl}
+              target='_blank'
+              rel='noopener noreferrer'
+              aria-label='Kambest on Facebook'
+              className='inline-flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground'>
+              <FacebookIcon className='size-10' />
+            </Link>
+            <Link
+              href={instagramUrl}
+              target='_blank'
+              rel='noopener noreferrer'
+              aria-label='Kambest on Instagram'
+              className='inline-flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground'>
+              <InstagramIcon className='size-6' />
+            </Link>
+          </div>
         </div>
 
         <div>

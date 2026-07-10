@@ -14,6 +14,7 @@ import {
   PHONE_NUMBERS as FALLBACK_PHONE_NUMBERS,
   CONTACT_EMAIL as FALLBACK_CONTACT_EMAIL,
   FACEBOOK_URL as FALLBACK_FACEBOOK_URL,
+  INSTAGRAM_URL as FALLBACK_INSTAGRAM_URL,
 } from "@/lib/contact";
 import { WHATSAPP_NUMBER as FALLBACK_WHATSAPP_NUMBER } from "@/lib/whatsapp";
 
@@ -31,6 +32,7 @@ export function ContactEditor() {
     phoneNumbers: contact?.phoneNumbers.length ? contact.phoneNumbers : FALLBACK_PHONE_NUMBERS,
     email: contact?.email ?? FALLBACK_CONTACT_EMAIL,
     facebookUrl: contact?.facebookUrl ?? FALLBACK_FACEBOOK_URL,
+    instagramUrl: contact?.instagramUrl ?? FALLBACK_INSTAGRAM_URL,
     whatsappNumber: contact?.whatsappNumber ?? FALLBACK_WHATSAPP_NUMBER,
   };
 
@@ -45,6 +47,7 @@ function ContactForm({
     phoneNumbers: string[];
     email: string;
     facebookUrl: string;
+    instagramUrl: string;
     whatsappNumber: string;
   };
 }) {
@@ -53,6 +56,7 @@ function ContactForm({
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(initial.phoneNumbers);
   const [email, setEmail] = useState(initial.email);
   const [facebookUrl, setFacebookUrl] = useState(initial.facebookUrl);
+  const [instagramUrl, setInstagramUrl] = useState(initial.instagramUrl);
   const [whatsappNumber, setWhatsappNumber] = useState(initial.whatsappNumber);
   const [submitting, setSubmitting] = useState(false);
 
@@ -102,6 +106,7 @@ function ContactForm({
         phoneNumbers,
         email: email.trim() || undefined,
         facebookUrl,
+        instagramUrl: instagramUrl.trim() || undefined,
         whatsappNumber,
       });
       toast.success("Contact info saved.");
@@ -192,6 +197,14 @@ function ContactForm({
               value={facebookUrl}
               onChange={(e) => setFacebookUrl(e.target.value)}
               required
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="contact-instagram">Instagram URL</Label>
+            <Input
+              id="contact-instagram"
+              value={instagramUrl}
+              onChange={(e) => setInstagramUrl(e.target.value)}
             />
           </div>
           <div className="grid gap-1.5">

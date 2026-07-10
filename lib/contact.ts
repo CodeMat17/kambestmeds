@@ -1,4 +1,5 @@
 export const FACEBOOK_URL = "https://www.facebook.com/kambestTradomedicalservices";
+export const INSTAGRAM_URL = "https://www.instagram.com/kambesttradomedicalservices1";
 
 export const ADDRESSES = [
   {

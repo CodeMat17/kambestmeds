@@ -17,6 +17,7 @@ export default defineSchema({
     phoneNumbers: v.array(v.string()),
     email: v.optional(v.string()),
     facebookUrl: v.string(),
+    instagramUrl: v.optional(v.string()),
     whatsappNumber: v.string(),
   }).index("by_key", ["key"]),
 
