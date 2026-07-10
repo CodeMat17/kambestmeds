@@ -46,6 +46,7 @@ export default function ProductsDashboardPage() {
   const [editingId, setEditingId] = useState<Id<"products"> | null>(null);
   const [name, setName] = useState("");
   const [cures, setCures] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -56,6 +57,7 @@ export default function ProductsDashboardPage() {
     setEditingId(null);
     setName("");
     setCures("");
+    setInstructions("");
     setAmount(DEFAULT_AMOUNT);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -70,6 +72,7 @@ export default function ProductsDashboardPage() {
     setEditingId(p._id);
     setName(p.name);
     setCures(p.cures);
+    setInstructions(p.instructions ?? "");
     setAmount(p.amount);
     setImagePreview(p.imageUrl ?? null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -113,10 +116,10 @@ export default function ProductsDashboardPage() {
       const imageId = file ? await uploadImage(file) : undefined;
 
       if (editingId) {
-        await updateProduct({ id: editingId, name, cures, amount, imageId });
+        await updateProduct({ id: editingId, name, cures, instructions, amount, imageId });
         toast.success("Product updated.");
       } else {
-        await createProduct({ name, cures, amount, imageId: imageId! });
+        await createProduct({ name, cures, instructions, amount, imageId: imageId! });
         toast.success("Product added.");
       }
       resetForm();
@@ -172,7 +175,7 @@ export default function ProductsDashboardPage() {
           <form
             id="product-form"
             onSubmit={handleSubmit}
-            className="flex flex-1 flex-col gap-4 overflow-y-auto px-4"
+            className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4"
           >
             <div className="grid gap-1.5">
               <Label htmlFor="p-name">Name</Label>
@@ -181,6 +184,15 @@ export default function ProductsDashboardPage() {
             <div className="grid gap-1.5">
               <Label htmlFor="p-cures">What it cures / helps with</Label>
               <Textarea id="p-cures" value={cures} onChange={(e) => setCures(e.target.value)} required />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="p-instructions">Instructions (one instruction per line)</Label>
+              <Textarea
+                id="p-instructions"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                placeholder={"e.g. Take before food\nNot for pregnant women"}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="p-amount">Amount (₦)</Label>

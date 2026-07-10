@@ -23,6 +23,7 @@ export default async function ProductsPage() {
           video: false,
           name: p.name,
           cures: p.cures,
+          instructions: p.instructions,
           amount: p.amount,
         }))
       : staticProducts.map((p) => ({
@@ -31,6 +32,7 @@ export default async function ProductsPage() {
           video: isVideo(p.image),
           name: p.name,
           cures: p.cures,
+          instructions: p.instructions,
           amount: p.amount,
         }));
 

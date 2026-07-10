@@ -5,6 +5,7 @@ export default defineSchema({
   products: defineTable({
     name: v.string(),
     cures: v.string(),
+    instructions: v.optional(v.string()),
     amount: v.string(),
     imageId: v.id("_storage"),
     order: v.number(),
@@ -38,6 +39,18 @@ export default defineSchema({
     ctaSubtitle: v.string(),
     ctaWhatsappMessage: v.string(),
   }).index("by_key", ["key"]),
+
+  labMedia: defineTable({
+    storageId: v.id("_storage"),
+    type: v.union(v.literal("image"), v.literal("video")),
+    caption: v.optional(v.string()),
+    order: v.number(),
+  }).index("by_order", ["order"]),
+
+  teamMembers: defineTable({
+    storageId: v.id("_storage"),
+    order: v.number(),
+  }).index("by_order", ["order"]),
 
   siteContent: defineTable({
     key: v.union(

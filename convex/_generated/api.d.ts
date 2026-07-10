@@ -12,8 +12,10 @@ import type * as contactInfo from "../contactInfo.js";
 import type * as content from "../content.js";
 import type * as home from "../home.js";
 import type * as images from "../images.js";
+import type * as labMedia from "../labMedia.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as products from "../products.js";
+import type * as team from "../team.js";
 
 import type {
   ApiFromModules,
@@ -26,8 +28,10 @@ declare const fullApi: ApiFromModules<{
   content: typeof content;
   home: typeof home;
   images: typeof images;
+  labMedia: typeof labMedia;
   "lib/auth": typeof lib_auth;
   products: typeof products;
+  team: typeof team;
 }>;
 
 /**

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Reveal } from "@/components/reveal";
 import { ProductCard } from "@/components/product-card";
+import { LabGallery } from "@/components/lab-gallery";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { HeroMotion } from "@/components/hero-motion";
 import { fetchQuery } from "convex/nextjs";
@@ -84,9 +85,10 @@ const fallback = {
 };
 
 export default async function Home() {
-  const [dbProducts, homeContent] = await Promise.all([
+  const [dbProducts, homeContent, labMedia] = await Promise.all([
     fetchQuery(api.products.list, {}),
     fetchQuery(api.home.get, {}),
+    fetchQuery(api.labMedia.list, {}),
   ]);
 
   const featuredProducts: ProductView[] =
@@ -97,6 +99,7 @@ export default async function Home() {
           video: false,
           name: p.name,
           cures: p.cures,
+          instructions: p.instructions,
           amount: p.amount,
         }))
       : staticProducts.slice(0, 3).map((p) => ({
@@ -105,6 +108,7 @@ export default async function Home() {
           video: isVideo(p.image),
           name: p.name,
           cures: p.cures,
+          instructions: p.instructions,
           amount: p.amount,
         }));
 
@@ -230,6 +234,13 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* Lab Gallery */}
+      <LabGallery
+        title="Inside the KAMBEST Lab"
+        subtitle="A look at the machines and processes behind every herbal remedy we produce."
+        items={labMedia}
+      />
 
       {/* Testimonials */}
       <section className='mx-auto max-w-6xl px-4 py-20 sm:px-6'>

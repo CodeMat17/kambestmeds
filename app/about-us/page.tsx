@@ -4,6 +4,7 @@ import { fetchQuery } from "convex/nextjs";
 import { HeartHandshake, Sparkles, Users, Leaf } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Reveal } from "@/components/reveal";
+import { TeamGallery } from "@/components/team-gallery";
 import { staggerChildren, fadeUp } from "@/lib/motion";
 import { api } from "@/convex/_generated/api";
 
@@ -32,7 +33,11 @@ const fallback = {
 };
 
 export default async function AboutUsPage() {
-  const content = (await fetchQuery(api.content.get, { key: "about-us" })) ?? fallback;
+  const [rawContent, teamMembers] = await Promise.all([
+    fetchQuery(api.content.get, { key: "about-us" }),
+    fetchQuery(api.team.list, {}),
+  ]);
+  const content = rawContent ?? fallback;
   const heroImageUrl = content.heroImageUrl ?? "/about1.webp";
   const quote = content.quote?.trim() || fallback.quote;
   const quoteAuthor = content.quoteAuthor?.trim() || fallback.quoteAuthor;
@@ -73,9 +78,20 @@ export default async function AboutUsPage() {
           ))}
         </Reveal>
 
-        <Reveal className="rounded-2xl bg-primary/10 p-6">
-          <p className="text-lg font-semibold italic text-primary">&ldquo;{quote}&rdquo;</p>
-          <p className="mt-1 text-sm text-muted-foreground">— {quoteAuthor}</p>
+        <Reveal className="flex flex-col items-center gap-6 rounded-2xl bg-primary/10 p-6 ">
+          <div className="relative h-64 w-50 shrink-0 overflow-hidden rounded-md">
+            <Image
+              src="/kambest_ceo.webp"
+              alt={quoteAuthor}
+              fill
+              sizes="212px"
+              className="object-cover"
+            />
+          </div>
+          <div className="text-center sm:text-left">
+            <p className="text-lg font-semibold italic text-primary">&ldquo;{quote}&rdquo;</p>
+            <p className="mt-1 text-sm text-muted-foreground">— {quoteAuthor}</p>
+          </div>
         </Reveal>
       </section>
 
@@ -103,6 +119,12 @@ export default async function AboutUsPage() {
           </Reveal>
         </div>
       </section>
+
+      <TeamGallery
+        title="Our Team"
+        subtitle="The hands and hearts behind every remedy — dedicated to your wellness."
+        items={teamMembers.slice(0, 4)}
+      />
     </>
   );
 }

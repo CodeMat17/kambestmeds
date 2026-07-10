@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   Phone,
   ArrowLeft,
+  Images,
+  UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -21,6 +23,8 @@ const links = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/home", label: "Home Page", icon: Home },
   { href: "/dashboard/products", label: "Products", icon: Package },
+  { href: "/dashboard/lab", label: "Lab Gallery", icon: Images },
+  { href: "/dashboard/team", label: "Our Team", icon: UsersRound },
   { href: "/dashboard/about-us", label: "About Us", icon: Info },
   { href: "/dashboard/contact-us", label: "Contact Us", icon: Phone },
   { href: "/dashboard/terms", label: "Terms", icon: FileText },

@@ -2,6 +2,7 @@ export type Product = {
   image: string;
   name: string;
   cures: string;
+  instructions?: string;
   amount: string;
 };
 
@@ -13,6 +14,7 @@ export type ProductView = {
   video: boolean;
   name: string;
   cures: string;
+  instructions?: string;
   amount: string;
 };
 

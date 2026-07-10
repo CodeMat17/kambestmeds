@@ -13,6 +13,8 @@ import {
   Phone,
   ArrowRight,
   Sparkles,
+  Images,
+  UsersRound,
 } from "lucide-react";
 
 const quickLinks = [
@@ -27,6 +29,18 @@ const quickLinks = [
     label: "Products",
     description: "Add, edit, or remove products shown on the storefront.",
     icon: Package,
+  },
+  {
+    href: "/dashboard/lab",
+    label: "Lab Gallery",
+    description: "Manage the photos and videos shown in the lab gallery.",
+    icon: Images,
+  },
+  {
+    href: "/dashboard/team",
+    label: "Our Team",
+    description: "Manage the team member photos shown on the site.",
+    icon: UsersRound,
   },
   {
     href: "/dashboard/about-us",

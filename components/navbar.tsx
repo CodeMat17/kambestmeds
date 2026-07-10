@@ -72,7 +72,7 @@ export function Navbar() {
                     <Image src="/logo_v1.webp" alt="Kambest logo" width={130} height={36} className="rounded-full" priority />
                   </SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col gap-2 px-4">
+                <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4">
                   {links.map((l) => (
                     <SheetClose
                       key={l.href}

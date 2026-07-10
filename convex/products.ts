@@ -27,6 +27,7 @@ export const create = mutation({
   args: {
     name: v.string(),
     cures: v.string(),
+    instructions: v.optional(v.string()),
     amount: v.string(),
     imageId: v.id("_storage"),
   },
@@ -43,6 +44,7 @@ export const update = mutation({
     id: v.id("products"),
     name: v.string(),
     cures: v.string(),
+    instructions: v.optional(v.string()),
     amount: v.string(),
     imageId: v.optional(v.id("_storage")),
   },

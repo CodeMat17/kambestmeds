@@ -97,7 +97,7 @@ export function ProductCard({ product }: { product: ProductView }) {
               <SheetTitle>{product.name}</SheetTitle>
               <SheetDescription>{formatNaira(product.amount)}</SheetDescription>
             </SheetHeader>
-            <div className="px-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
               <div className="relative aspect-4/3 overflow-hidden rounded-xl bg-muted">
                 {video ? (
                   <video src={src} muted playsInline controls className="size-full object-cover" />
@@ -107,6 +107,21 @@ export function ProductCard({ product }: { product: ProductView }) {
               </div>
               <h4 className="mt-4 text-sm font-bold">What it helps with</h4>
               <p className="mt-1 text-sm text-muted-foreground">{product.cures}</p>
+
+              {product.instructions?.trim() && (
+                <>
+                  <h4 className="mt-4 text-sm font-bold">Instructions</h4>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                    {product.instructions
+                      .split("\n")
+                      .map((line) => line.trim())
+                      .filter(Boolean)
+                      .map((line, i) => (
+                        <li key={i}>{line}</li>
+                      ))}
+                  </ul>
+                </>
+              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -120,7 +135,7 @@ export function ProductCard({ product }: { product: ProductView }) {
               <SheetTitle>Order {product.name}</SheetTitle>
               <SheetDescription>We&rsquo;ll confirm your order on WhatsApp.</SheetDescription>
             </SheetHeader>
-            <form onSubmit={submitOrder} className="flex flex-1 flex-col gap-4 px-4">
+            <form onSubmit={submitOrder} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4">
               <div className="grid gap-1.5">
                 <Label>Product</Label>
                 <Input value={product.name} readOnly disabled />
@@ -162,7 +177,7 @@ export function ProductCard({ product }: { product: ProductView }) {
               <SheetTitle>Ask about {product.name}</SheetTitle>
               <SheetDescription>We&rsquo;ll reply on WhatsApp.</SheetDescription>
             </SheetHeader>
-            <form onSubmit={submitEnquiry} className="flex flex-1 flex-col gap-4 px-4">
+            <form onSubmit={submitEnquiry} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4">
               <div className="grid gap-1.5">
                 <Label>Product</Label>
                 <Input value={product.name} readOnly disabled />
