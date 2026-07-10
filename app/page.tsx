@@ -93,7 +93,7 @@ export default async function Home() {
 
   const featuredProducts: ProductView[] =
     dbProducts.length > 0
-      ? dbProducts.slice(0, 3).map((p) => ({
+      ? dbProducts.slice(0, 4).map((p) => ({
           key: p._id,
           src: p.imageUrl ?? "",
           video: false,
@@ -179,9 +179,7 @@ export default async function Home() {
       {/* Why Choose */}
       <section className='mx-auto max-w-6xl px-4 py-20 sm:px-6'>
         <Reveal className='text-center'>
-          <h2 className='text-2xl font-extrabold sm:text-3xl'>
-            {whyTitle}
-          </h2>
+          <h2 className='text-2xl font-extrabold sm:text-3xl'>{whyTitle}</h2>
           <p className='mx-auto mt-3 max-w-2xl text-muted-foreground'>
             {whySubtitle}
           </p>
@@ -219,7 +217,7 @@ export default async function Home() {
 
           <Reveal
             variants={staggerChildren}
-            className='mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+            className='mt-12 grid gap-4 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
             {featuredProducts.map((p) => (
               <Reveal key={p.key} variants={fadeUp}>
                 <ProductCard product={p} />
@@ -237,8 +235,8 @@ export default async function Home() {
 
       {/* Lab Gallery */}
       <LabGallery
-        title="Inside the KAMBEST Lab"
-        subtitle="A look at the machines and processes behind every herbal remedy we produce."
+        title='Inside the KAMBEST Lab'
+        subtitle='A look at the machines and processes behind every herbal remedy we produce.'
         items={labMedia}
       />
 
@@ -280,12 +278,8 @@ export default async function Home() {
       <section className='mx-auto max-w-6xl px-4 pb-20 sm:px-6'>
         <Reveal>
           <div className='flex flex-col items-center gap-5 rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-12'>
-            <h2 className='text-2xl font-extrabold sm:text-3xl'>
-              {ctaTitle}
-            </h2>
-            <p className='max-w-xl text-primary-foreground/90'>
-              {ctaSubtitle}
-            </p>
+            <h2 className='text-2xl font-extrabold sm:text-3xl'>{ctaTitle}</h2>
+            <p className='max-w-xl text-primary-foreground/90'>{ctaSubtitle}</p>
             <Button
               size='lg'
               variant='secondary'
