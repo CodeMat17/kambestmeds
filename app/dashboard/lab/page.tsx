@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ensureJimpDecodable } from "@/lib/image";
 
-const MAX_ITEMS = 8;
+const MAX_ITEMS = 10;
 const MAX_VIDEO_BYTES = 18 * 1024 * 1024;
 
 export default function LabDashboardPage() {

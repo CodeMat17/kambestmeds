@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./lib/auth";
 
-export const MAX_ITEMS = 8;
+export const MAX_ITEMS = 10;
 
 export const list = query({
   args: {},
