@@ -2,9 +2,10 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { revalidateSite } from "@/app/actions/revalidate";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,14 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ensureJimpDecodable } from "@/lib/image";
+import { uploadMedia } from "@/lib/upload-media";
+import { destroyAsset } from "@/app/actions/cloudinary";
+import { imageUrl } from "@/lib/cloudinary";
 
 const MAX_ITEMS = 4;
 
 export default function TeamDashboardPage() {
   const items = useQuery(api.team.list);
-  const generateUploadUrl = useMutation(api.team.generateUploadUrl);
-  const optimizeUpload = useAction(api.images.optimizeUpload);
   const createItem = useMutation(api.team.create);
   const removeItem = useMutation(api.team.remove);
 
@@ -78,17 +79,11 @@ export default function TeamDashboardPage() {
 
     setSubmitting(true);
     try {
-      const decodable = await ensureJimpDecodable(file);
-      const uploadUrl = await generateUploadUrl();
-      const res = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": decodable.type },
-        body: decodable,
-      });
-      if (!res.ok) throw new Error("Upload failed.");
-      const { storageId } = await res.json();
-      const optimizedId = await optimizeUpload({ storageId });
-      await createItem({ storageId: optimizedId });
+      // Goes straight from the browser to Cloudinary; Convex only records
+      // the resulting pointer.
+      const photo = await uploadMedia(file);
+      await createItem({ photo });
+      await revalidateSite("team");
       toast.success("Team member added.");
       resetForm();
       setSheetOpen(false);
@@ -103,7 +98,11 @@ export default function TeamDashboardPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await removeItem({ id: deleteTarget });
+      const { orphaned } = await removeItem({ id: deleteTarget });
+      // Convex mutations can't reach Cloudinary, so the freed asset is
+      // deleted here through the Server Action.
+      if (orphaned) await destroyAsset(orphaned.publicId, orphaned.resourceType);
+      await revalidateSite("team");
       toast.success("Team member deleted.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed.");
@@ -149,7 +148,7 @@ export default function TeamDashboardPage() {
             onSubmit={handleSubmit}
             className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4"
           >
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="tm-file">Photo</Label>
               {preview && (
                 <div className="relative aspect-video w-full overflow-hidden rounded-md border border-border/60 bg-muted">
@@ -184,8 +183,8 @@ export default function TeamDashboardPage() {
         {items?.map((item) => (
           <Card key={item._id} className="overflow-hidden p-0">
             <div className="relative aspect-video rounded-md bg-muted">
-              {item.photoUrl && (
-                <Image src={item.photoUrl} alt="" fill sizes="300px" className="object-cover" />
+              {item.photo && (
+                <Image src={imageUrl(item.photo, { width: 600, crop: "fill" })} unoptimized alt="" fill sizes="300px" className="object-cover" />
               )}
             </div>
             <div className="flex gap-2 border-t border-border/60 p-2">

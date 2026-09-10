@@ -2,16 +2,19 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { revalidateSite } from "@/app/actions/revalidate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/dashboard/rich-text-editor";
-import { ensureJimpDecodable } from "@/lib/image";
+import { uploadMedia } from "@/lib/upload-media";
+import { destroyAsset } from "@/app/actions/cloudinary";
+import { imageUrl } from "@/lib/cloudinary";
 
 type ContentKey = "about-us" | "terms" | "privacy";
 type ValueItem = { title: string; body: string };
@@ -47,7 +50,9 @@ export function ContentEditor({
   const initial: Content = {
     title: content?.title ?? "",
     body: content?.body ?? "",
-    heroImageUrl: content?.heroImageUrl ?? null,
+    heroImageUrl: content?.heroImage
+      ? imageUrl(content.heroImage, { width: 800, crop: "fill" })
+      : null,
     quote: content?.quote ?? "",
     quoteAuthor: content?.quoteAuthor ?? "",
     values: content?.values?.length ? content.values : DEFAULT_VALUES,
@@ -66,26 +71,6 @@ export function ContentEditor({
   );
 }
 
-function useHeroUpload() {
-  const generateUploadUrl = useMutation(api.content.generateUploadUrl);
-  const optimizeUpload = useAction(api.images.optimizeUpload);
-
-  async function upload(file: File) {
-    file = await ensureJimpDecodable(file);
-    const uploadUrl = await generateUploadUrl();
-    const res = await fetch(uploadUrl, {
-      method: "POST",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
-    if (!res.ok) throw new Error("Upload failed.");
-    const { storageId } = await res.json();
-    return await optimizeUpload({ storageId });
-  }
-
-  return upload;
-}
-
 function AboutUsSections({ initial }: { initial: Content }) {
   return (
     <div className="grid max-w-2xl gap-6 mx-auto">
@@ -99,7 +84,6 @@ function AboutUsSections({ initial }: { initial: Content }) {
 
 function HeroSection({ initial }: { initial: Content }) {
   const upsert = useMutation(api.content.upsert);
-  const uploadHero = useHeroUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState(initial.title);
   const [heroImageUrl, setHeroImageUrl] = useState(initial.heroImageUrl);
@@ -113,11 +97,14 @@ function HeroSection({ initial }: { initial: Content }) {
     }
     setSubmitting(true);
     try {
-      let heroImageId;
       const file = fileInputRef.current?.files?.[0];
-      if (file) heroImageId = await uploadHero(file);
+      const heroImage = file ? await uploadMedia(file) : undefined;
 
-      await upsert({ key: "about-us", title, heroImageId });
+      const { orphaned } = await upsert({ key: "about-us", title, heroImage });
+      // Replacing the hero leaves the old asset unreferenced; Convex mutations
+      // can't reach Cloudinary, so it is deleted here.
+      if (orphaned) await destroyAsset(orphaned.publicId, orphaned.resourceType);
+      await revalidateSite("site-content");
       toast.success("Hero section saved.");
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
@@ -128,18 +115,21 @@ function HeroSection({ initial }: { initial: Content }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <h2 className="font-bold">Hero section</h2>
-        <div className="grid gap-1.5">
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Hero section</h2>
+          <hr className="rule mt-4" />
+        </div>
+        <div className="grid gap-2">
           <Label htmlFor="about-title">Title</Label>
           <Input id="about-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="about-hero">Hero image (leave empty to keep current)</Label>
           {heroImageUrl && (
             <div className="relative aspect-4/3 w-40 overflow-hidden rounded-lg bg-muted">
-              <Image src={heroImageUrl} alt="" fill sizes="160px" className="object-cover" />
+              <Image src={heroImageUrl} unoptimized alt="" fill sizes="160px" className="object-cover" />
             </div>
           )}
           <Input
@@ -152,9 +142,9 @@ function HeroSection({ initial }: { initial: Content }) {
               if (file) setHeroImageUrl(URL.createObjectURL(file));
             }}
           />
-          <p className="text-xs text-muted-foreground">Automatically optimized to under 150KB on upload.</p>
+          <p className="text-xs text-muted-foreground">Delivered through Cloudinary, automatically compressed and format-converted per visitor.</p>
         </div>
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save hero section"}
         </Button>
       </form>
@@ -176,6 +166,7 @@ function BodySection({ initial }: { initial: Content }) {
     setSubmitting(true);
     try {
       await upsert({ key: "about-us", body });
+      await revalidateSite("site-content");
       toast.success("Body section saved.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -185,10 +176,13 @@ function BodySection({ initial }: { initial: Content }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <h2 className="font-bold">Story / body</h2>
-        <div className="grid gap-1.5">
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Story / body</h2>
+          <hr className="rule mt-4" />
+        </div>
+        <div className="grid gap-2">
           <Label htmlFor="about-body">Body (separate paragraphs with a blank line)</Label>
           <Textarea
             id="about-body"
@@ -198,7 +192,7 @@ function BodySection({ initial }: { initial: Content }) {
             required
           />
         </div>
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save body section"}
         </Button>
       </form>
@@ -217,6 +211,7 @@ function QuoteSection({ initial }: { initial: Content }) {
     setSubmitting(true);
     try {
       await upsert({ key: "about-us", quote, quoteAuthor });
+      await revalidateSite("site-content");
       toast.success("Quote section saved.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -226,14 +221,17 @@ function QuoteSection({ initial }: { initial: Content }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <h2 className="font-bold">Pull quote</h2>
-        <div className="grid gap-1.5">
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Pull quote</h2>
+          <hr className="rule mt-4" />
+        </div>
+        <div className="grid gap-2">
           <Label htmlFor="about-quote">Quote</Label>
           <Textarea id="about-quote" value={quote} onChange={(e) => setQuote(e.target.value)} rows={2} />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="about-quote-author">Attribution</Label>
           <Input
             id="about-quote-author"
@@ -241,7 +239,7 @@ function QuoteSection({ initial }: { initial: Content }) {
             onChange={(e) => setQuoteAuthor(e.target.value)}
           />
         </div>
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save quote section"}
         </Button>
       </form>
@@ -267,6 +265,7 @@ function ValuesSection({ initial }: { initial: Content }) {
     setSubmitting(true);
     try {
       await upsert({ key: "about-us", values });
+      await revalidateSite("site-content");
       toast.success("Values section saved.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -276,12 +275,15 @@ function ValuesSection({ initial }: { initial: Content }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <h2 className="font-bold">Our values (4 cards)</h2>
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Our values (4 cards)</h2>
+          <hr className="rule mt-4" />
+        </div>
         {values.map((v, i) => (
           <div key={i} className="grid gap-2 rounded-lg border border-border p-3">
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor={`value-title-${i}`}>Title {i + 1}</Label>
               <Input
                 id={`value-title-${i}`}
@@ -290,7 +292,7 @@ function ValuesSection({ initial }: { initial: Content }) {
                 required
               />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor={`value-body-${i}`}>Description {i + 1}</Label>
               <Input
                 id={`value-body-${i}`}
@@ -301,7 +303,7 @@ function ValuesSection({ initial }: { initial: Content }) {
             </div>
           </div>
         ))}
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save values section"}
         </Button>
       </form>
@@ -319,7 +321,6 @@ function RichTextForm({
   initial: Content;
 }) {
   const upsert = useMutation(api.content.upsert);
-  const uploadHero = useHeroUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState(initial.title);
   const [body, setBody] = useState(initial.body);
@@ -335,11 +336,13 @@ function RichTextForm({
 
     setSubmitting(true);
     try {
-      let heroImageId;
       const file = fileInputRef.current?.files?.[0];
-      if (withHeroImage && file) heroImageId = await uploadHero(file);
+      const heroImage =
+        withHeroImage && file ? await uploadMedia(file) : undefined;
 
-      await upsert({ key: contentKey, title, body, heroImageId, richText: true });
+      const { orphaned } = await upsert({ key: contentKey, title, body, heroImage, richText: true });
+      if (orphaned) await destroyAsset(orphaned.publicId, orphaned.resourceType);
+      await revalidateSite("site-content");
       toast.success("Saved.");
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
@@ -350,22 +353,22 @@ function RichTextForm({
   }
 
   return (
-    <Card className="max-w-2xl p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <div className="grid gap-1.5">
+    <Card className="max-w-2xl gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div className="grid gap-2">
           <Label htmlFor={`${contentKey}-title`}>Title</Label>
           <Input id={`${contentKey}-title`} value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor={`${contentKey}-body`}>Body</Label>
           <RichTextEditor value={body} onChange={setBody} />
         </div>
         {withHeroImage && (
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label htmlFor={`${contentKey}-hero`}>Hero image (leave empty to keep current)</Label>
             {heroImageUrl && (
               <div className="relative aspect-4/3 w-40 overflow-hidden rounded-lg bg-muted">
-                <Image src={heroImageUrl} alt="" fill sizes="160px" className="object-cover" />
+                <Image src={heroImageUrl} unoptimized alt="" fill sizes="160px" className="object-cover" />
               </div>
             )}
             <Input
@@ -378,10 +381,10 @@ function RichTextForm({
                 if (file) setHeroImageUrl(URL.createObjectURL(file));
               }}
             />
-            <p className="text-xs text-muted-foreground">Automatically optimized to under 150KB on upload.</p>
+            <p className="text-xs text-muted-foreground">Delivered through Cloudinary, automatically compressed and format-converted per visitor.</p>
           </div>
         )}
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save changes"}
         </Button>
       </form>

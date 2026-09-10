@@ -1,25 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./lib/auth";
+import { mediaValidator } from "./lib/media";
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const products = await ctx.db.query("products").withIndex("by_order").order("asc").collect();
-    return await Promise.all(
-      products.map(async (p) => ({
-        ...p,
-        imageUrl: await ctx.storage.getUrl(p.imageId),
-      }))
-    );
-  },
-});
-
-export const generateUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
-    return await ctx.storage.generateUploadUrl();
+    // No per-item storage URL lookups any more: the Cloudinary pointer stored
+    // on the document is enough for the caller to build a delivery URL.
+    return await ctx.db.query("products").withIndex("by_order").order("asc").collect();
   },
 });
 
@@ -29,7 +18,7 @@ export const create = mutation({
     cures: v.string(),
     instructions: v.optional(v.string()),
     amount: v.string(),
-    imageId: v.id("_storage"),
+    image: mediaValidator,
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
@@ -39,6 +28,8 @@ export const create = mutation({
   },
 });
 
+// Mutations can't reach Cloudinary, so any asset the write orphans is returned
+// to the caller, which deletes it through the `destroyAsset` Server Action.
 export const update = mutation({
   args: {
     id: v.id("products"),
@@ -46,21 +37,19 @@ export const update = mutation({
     cures: v.string(),
     instructions: v.optional(v.string()),
     amount: v.string(),
-    imageId: v.optional(v.id("_storage")),
+    image: v.optional(mediaValidator),
   },
-  handler: async (ctx, { id, imageId, ...rest }) => {
+  handler: async (ctx, { id, image, ...rest }) => {
     await requireAdmin(ctx);
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("Product not found.");
 
-    await ctx.db.patch(id, {
-      ...rest,
-      ...(imageId ? { imageId } : {}),
-    });
+    await ctx.db.patch(id, { ...rest, ...(image ? { image } : {}) });
 
-    if (imageId && existing.imageId !== imageId) {
-      await ctx.storage.delete(existing.imageId);
+    if (image && existing.image.publicId !== image.publicId) {
+      return { orphaned: existing.image };
     }
+    return { orphaned: null };
   },
 });
 
@@ -69,8 +58,8 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     await requireAdmin(ctx);
     const existing = await ctx.db.get(id);
-    if (!existing) return;
+    if (!existing) return { orphaned: null };
     await ctx.db.delete(id);
-    await ctx.storage.delete(existing.imageId);
+    return { orphaned: existing.image };
   },
 });

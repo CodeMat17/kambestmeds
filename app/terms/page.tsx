@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { fetchQuery } from "convex/nextjs";
 import DOMPurify from "isomorphic-dompurify";
-import { api } from "@/convex/_generated/api";
+import { getSiteContent } from "@/lib/site-data";
+import { Section, PageHeader } from "@/components/section";
+import { Reveal } from "@/components/reveal";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -13,10 +14,14 @@ const fallback = {
   body: "<p>By ordering from or contacting KAMBEST Health Solutions, you agree that product information is provided as part of our herbal wellness guidance as a qualified health practitioner. For serious medical conditions, please reach out to our team directly for proper guidance.</p>",
 };
 
+// Must be a literal for Next's static segment-config analysis; keep in sync
+// with SITE_REVALIDATE in lib/site-data.ts.
+export const revalidate = 3600;
+
 export default async function TermsPage() {
   let content: { title: string; body: string } = fallback;
   try {
-    const result = await fetchQuery(api.content.get, { key: "terms" });
+    const result = await getSiteContent("terms");
     if (result?.title && result?.body) {
       content = { title: result.title, body: result.body };
     }
@@ -29,9 +34,17 @@ export default async function TermsPage() {
   });
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <h1 className="text-3xl font-extrabold">{content.title}</h1>
-      <div className="richtext mt-4" dangerouslySetInnerHTML={{ __html: body }} />
-    </section>
+    <>
+      <PageHeader eyebrow="Legal" title={content.title} />
+
+      <Section className="py-16 sm:py-20" width="narrow">
+        <Reveal>
+          <div
+            className="richtext"
+            dangerouslySetInnerHTML={{ __html: body }}
+          />
+        </Reveal>
+      </Section>
+    </>
   );
 }

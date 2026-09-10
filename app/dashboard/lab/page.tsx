@@ -2,9 +2,10 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { revalidateSite } from "@/app/actions/revalidate";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,15 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ensureJimpDecodable } from "@/lib/image";
+import { uploadMedia, MAX_VIDEO_BYTES } from "@/lib/upload-media";
+import { destroyAsset } from "@/app/actions/cloudinary";
+import { imageUrl, videoUrl } from "@/lib/cloudinary";
 
 const MAX_ITEMS = 10;
-const MAX_VIDEO_BYTES = 18 * 1024 * 1024;
 
 export default function LabDashboardPage() {
   const items = useQuery(api.labMedia.list);
-  const generateUploadUrl = useMutation(api.labMedia.generateUploadUrl);
-  const optimizeUpload = useAction(api.images.optimizeUpload);
   const createItem = useMutation(api.labMedia.create);
   const removeItem = useMutation(api.labMedia.remove);
 
@@ -66,36 +66,11 @@ export default function LabDashboardPage() {
     if (!file) return;
     const type = file.type.startsWith("video/") ? "video" : "image";
     if (type === "video" && file.size > MAX_VIDEO_BYTES) {
-      toast.error("Video must be under 18MB.");
+      toast.error(`Video must be under ${MAX_VIDEO_BYTES / 1024 / 1024}MB.`);
       e.target.value = "";
       return;
     }
     setPreview({ url: URL.createObjectURL(file), type });
-  }
-
-  async function uploadFile(file: File, type: "image" | "video") {
-    if (type === "video") {
-      const uploadUrl = await generateUploadUrl();
-      const res = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!res.ok) throw new Error("Upload failed.");
-      const { storageId } = await res.json();
-      return storageId;
-    }
-
-    const decodable = await ensureJimpDecodable(file);
-    const uploadUrl = await generateUploadUrl();
-    const res = await fetch(uploadUrl, {
-      method: "POST",
-      headers: { "Content-Type": decodable.type },
-      body: decodable,
-    });
-    if (!res.ok) throw new Error("Upload failed.");
-    const { storageId } = await res.json();
-    return await optimizeUpload({ storageId });
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -110,11 +85,13 @@ export default function LabDashboardPage() {
       return;
     }
 
-    const type = file.type.startsWith("video/") ? "video" : "image";
     setSubmitting(true);
     try {
-      const storageId = await uploadFile(file, type);
-      await createItem({ storageId, type, caption: caption.trim() || undefined });
+      // Straight to Cloudinary; images and videos take the same path, and the
+      // resource type is derived from the file itself.
+      const media = await uploadMedia(file);
+      await createItem({ media, caption: caption.trim() || undefined });
+      await revalidateSite("lab-media");
       toast.success("Added to lab gallery.");
       resetForm();
       setSheetOpen(false);
@@ -129,7 +106,11 @@ export default function LabDashboardPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await removeItem({ id: deleteTarget.id });
+      const { orphaned } = await removeItem({ id: deleteTarget.id });
+      // Convex mutations can't reach Cloudinary, so the freed asset is
+      // deleted here through the Server Action.
+      if (orphaned) await destroyAsset(orphaned.publicId, orphaned.resourceType);
+      await revalidateSite("lab-media");
       toast.success("Item deleted.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed.");
@@ -177,7 +158,7 @@ export default function LabDashboardPage() {
             onSubmit={handleSubmit}
             className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4"
           >
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="lm-file">Photo or video</Label>
               {preview && preview.type === "image" && (
                 <div className="relative aspect-4/3 w-full overflow-hidden rounded-md border border-border/60 bg-muted">
@@ -215,7 +196,7 @@ export default function LabDashboardPage() {
                 Images are automatically optimized. Videos must be under 18MB.
               </p>
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="lm-caption">Caption (optional)</Label>
               <Input id="lm-caption" value={caption} onChange={(e) => setCaption(e.target.value)} />
             </div>
@@ -237,18 +218,19 @@ export default function LabDashboardPage() {
         {items?.map((item) => (
           <Card key={item._id} className="overflow-hidden p-0">
             <div className="relative aspect-4/3 bg-muted">
-              {item.mediaUrl && item.type === "image" && (
+              {item.media.resourceType === "image" && (
                 <Image
-                  src={item.mediaUrl}
+                  src={imageUrl(item.media, { width: 600, crop: "fill" })}
+                  unoptimized
                   alt={item.caption ?? "Lab machine"}
                   fill
                   sizes="300px"
                   className="object-cover"
                 />
               )}
-              {item.mediaUrl && item.type === "video" && (
+              {item.media.resourceType === "video" && (
                 <video
-                  src={item.mediaUrl}
+                  src={videoUrl(item.media)}
                   muted
                   playsInline
                   controls

@@ -5,8 +5,9 @@ import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -16,7 +17,14 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    return <Button variant="ghost" size="icon" aria-label="Toggle theme" />;
+    return (
+      <Button
+        variant="ghost"
+        size="icon-lg"
+        aria-label="Toggle theme"
+        className={className}
+      />
+    );
   }
 
   const isDark = resolvedTheme === "dark";
@@ -24,10 +32,10 @@ export function ThemeToggle() {
   return (
     <Button
       variant="ghost"
-      size="icon"
+      size="icon-lg"
       aria-label="Toggle theme"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="overflow-hidden"
+      className={cn("overflow-hidden", className)}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span

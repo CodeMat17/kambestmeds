@@ -12,6 +12,9 @@ export type ProductView = {
   key: string;
   src: string;
   video: boolean;
+  // Cloudinary URLs already carry f_auto/q_auto, so they bypass next/image
+  // optimisation; the bundled fallback images under /public still use it.
+  unoptimized?: boolean;
   name: string;
   cures: string;
   instructions?: string;

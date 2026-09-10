@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./lib/auth";
+import { mediaValidator } from "./lib/media";
 
 const featureItem = v.object({ title: v.string(), body: v.string() });
 const testimonialItem = v.object({
@@ -12,25 +13,12 @@ const testimonialItem = v.object({
 export const get = query({
   args: {},
   handler: async (ctx) => {
-    const doc = await ctx.db
+    // The document already carries the Cloudinary pointer, so there is no
+    // signed-storage-URL round trip to make here.
+    return await ctx.db
       .query("homeContent")
       .withIndex("by_key", (q) => q.eq("key", "home"))
       .unique();
-    if (!doc) return null;
-    return {
-      ...doc,
-      heroImageUrl: doc.heroImageId
-        ? await ctx.storage.getUrl(doc.heroImageId)
-        : null,
-    };
-  },
-});
-
-export const generateUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
-    return await ctx.storage.generateUploadUrl();
   },
 });
 
@@ -39,7 +27,7 @@ export const upsert = mutation({
     heroBadge: v.optional(v.string()),
     heroTitle: v.optional(v.string()),
     heroSubtitle: v.optional(v.string()),
-    heroImageId: v.optional(v.id("_storage")),
+    heroImage: v.optional(mediaValidator),
     whyTitle: v.optional(v.string()),
     whySubtitle: v.optional(v.string()),
     features: v.optional(v.array(featureItem)),
@@ -64,7 +52,7 @@ export const upsert = mutation({
         heroBadge: args.heroBadge ?? "",
         heroTitle: args.heroTitle ?? "",
         heroSubtitle: args.heroSubtitle ?? "",
-        heroImageId: args.heroImageId,
+        heroImage: args.heroImage,
         whyTitle: args.whyTitle ?? "",
         whySubtitle: args.whySubtitle ?? "",
         features: args.features ?? [],
@@ -76,17 +64,24 @@ export const upsert = mutation({
         ctaSubtitle: args.ctaSubtitle ?? "",
         ctaWhatsappMessage: args.ctaWhatsappMessage ?? "",
       });
-      return;
+      return { orphaned: null };
     }
 
-    const { heroImageId, ...rest } = args;
+    const { heroImage, ...rest } = args;
     await ctx.db.patch(existing._id, {
       ...rest,
-      ...(heroImageId ? { heroImageId } : {}),
+      ...(heroImage ? { heroImage } : {}),
     });
 
-    if (heroImageId && existing.heroImageId && existing.heroImageId !== heroImageId) {
-      await ctx.storage.delete(existing.heroImageId);
+    // Convex can't call Cloudinary; the replaced asset goes back to the caller,
+    // which deletes it via the `destroyAsset` Server Action.
+    if (
+      heroImage &&
+      existing.heroImage &&
+      existing.heroImage.publicId !== heroImage.publicId
+    ) {
+      return { orphaned: existing.heroImage };
     }
+    return { orphaned: null };
   },
 });

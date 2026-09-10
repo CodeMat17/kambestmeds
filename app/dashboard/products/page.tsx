@@ -2,9 +2,10 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { revalidateSite } from "@/app/actions/revalidate";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,14 +30,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ensureJimpDecodable } from "@/lib/image";
+import { uploadMedia } from "@/lib/upload-media";
+import { destroyAsset } from "@/app/actions/cloudinary";
+import { imageUrl } from "@/lib/cloudinary";
 
 const DEFAULT_AMOUNT = "5000";
 
 export default function ProductsDashboardPage() {
   const products = useQuery(api.products.list);
-  const generateUploadUrl = useMutation(api.products.generateUploadUrl);
-  const optimizeUpload = useAction(api.images.optimizeUpload);
   const createProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
   const removeProduct = useMutation(api.products.remove);
@@ -74,7 +75,7 @@ export default function ProductsDashboardPage() {
     setCures(p.cures);
     setInstructions(p.instructions ?? "");
     setAmount(p.amount);
-    setImagePreview(p.imageUrl ?? null);
+    setImagePreview(imageUrl(p.image, { width: 600, crop: "fill" }));
     if (fileInputRef.current) fileInputRef.current.value = "";
     setSheetOpen(true);
   }
@@ -84,19 +85,6 @@ export default function ProductsDashboardPage() {
     if (!file) return;
     const url = URL.createObjectURL(file);
     setImagePreview(url);
-  }
-
-  async function uploadImage(file: File) {
-    file = await ensureJimpDecodable(file);
-    const uploadUrl = await generateUploadUrl();
-    const res = await fetch(uploadUrl, {
-      method: "POST",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
-    if (!res.ok) throw new Error("Upload failed.");
-    const { storageId } = await res.json();
-    return await optimizeUpload({ storageId });
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -113,13 +101,19 @@ export default function ProductsDashboardPage() {
 
     setSubmitting(true);
     try {
-      const imageId = file ? await uploadImage(file) : undefined;
+      // Straight from the browser to Cloudinary; Convex stores the pointer.
+      const image = file ? await uploadMedia(file) : undefined;
 
       if (editingId) {
-        await updateProduct({ id: editingId, name, cures, instructions, amount, imageId });
+        const { orphaned } = await updateProduct({ id: editingId, name, cures, instructions, amount, image });
+        // Replacing the image leaves the old asset unreferenced; Convex
+        // mutations can't reach Cloudinary, so it is deleted here.
+        if (orphaned) await destroyAsset(orphaned.publicId, orphaned.resourceType);
+        await revalidateSite("products");
         toast.success("Product updated.");
       } else {
-        await createProduct({ name, cures, instructions, amount, imageId: imageId! });
+        await createProduct({ name, cures, instructions, amount, image: image! });
+        await revalidateSite("products");
         toast.success("Product added.");
       }
       resetForm();
@@ -135,7 +129,9 @@ export default function ProductsDashboardPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await removeProduct({ id: deleteTarget.id });
+      const { orphaned } = await removeProduct({ id: deleteTarget.id });
+      if (orphaned) await destroyAsset(orphaned.publicId, orphaned.resourceType);
+      await revalidateSite("products");
       toast.success("Product deleted.");
       if (editingId === deleteTarget.id) {
         resetForm();
@@ -177,15 +173,15 @@ export default function ProductsDashboardPage() {
             onSubmit={handleSubmit}
             className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4"
           >
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="p-name">Name</Label>
               <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="p-cures">What it cures / helps with</Label>
               <Textarea id="p-cures" value={cures} onChange={(e) => setCures(e.target.value)} required />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="p-instructions">Instructions (one instruction per line)</Label>
               <Textarea
                 id="p-instructions"
@@ -194,7 +190,7 @@ export default function ProductsDashboardPage() {
                 placeholder={"e.g. Take before food\nNot for pregnant women"}
               />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="p-amount">Amount (₦)</Label>
               <Input
                 id="p-amount"
@@ -205,7 +201,7 @@ export default function ProductsDashboardPage() {
                 required
               />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="p-image">
                 Image {editingId ? "(leave empty to keep current)" : ""}
               </Label>
@@ -254,8 +250,8 @@ export default function ProductsDashboardPage() {
         {products?.map((p) => (
           <Card key={p._id} className="overflow-hidden p-0">
             <div className="relative aspect-4/3 bg-muted">
-              {p.imageUrl && (
-                <Image src={p.imageUrl} alt={p.name} fill sizes="300px" className="object-cover" />
+              {p.image && (
+                <Image src={imageUrl(p.image, { width: 600, crop: "fill" })} unoptimized alt={p.name} fill sizes="300px" className="object-cover" />
               )}
             </div>
             <div className="flex flex-1 flex-col gap-1 px-4">

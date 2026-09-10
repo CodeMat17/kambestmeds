@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./lib/auth";
+import { mediaValidator } from "./lib/media";
 
 const contentKey = v.union(
   v.literal("about-us"),
@@ -25,25 +26,10 @@ function sanitizeHtml(html: string): string {
 export const get = query({
   args: { key: contentKey },
   handler: async (ctx, { key }) => {
-    const doc = await ctx.db
+    return await ctx.db
       .query("siteContent")
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
-    if (!doc) return null;
-    return {
-      ...doc,
-      heroImageUrl: doc.heroImageId
-        ? await ctx.storage.getUrl(doc.heroImageId)
-        : null,
-    };
-  },
-});
-
-export const generateUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
-    return await ctx.storage.generateUploadUrl();
   },
 });
 
@@ -52,7 +38,7 @@ export const upsert = mutation({
     key: contentKey,
     title: v.optional(v.string()),
     body: v.optional(v.string()),
-    heroImageId: v.optional(v.id("_storage")),
+    heroImage: v.optional(mediaValidator),
     quote: v.optional(v.string()),
     quoteAuthor: v.optional(v.string()),
     values: v.optional(v.array(valueItem)),
@@ -60,7 +46,7 @@ export const upsert = mutation({
   },
   handler: async (
     ctx,
-    { key, title, body, heroImageId, quote, quoteAuthor, values, richText }
+    { key, title, body, heroImage, quote, quoteAuthor, values, richText }
   ) => {
     await requireAdmin(ctx);
     const existing = await ctx.db
@@ -75,29 +61,32 @@ export const upsert = mutation({
         key,
         title: title ?? "",
         body: cleanBody ?? "",
-        heroImageId,
+        heroImage,
         quote,
         quoteAuthor,
         values,
       });
-      return;
+      return { orphaned: null };
     }
 
     await ctx.db.patch(existing._id, {
       ...(title !== undefined ? { title } : {}),
       ...(cleanBody !== undefined ? { body: cleanBody } : {}),
-      ...(heroImageId ? { heroImageId } : {}),
+      ...(heroImage ? { heroImage } : {}),
       ...(quote !== undefined ? { quote } : {}),
       ...(quoteAuthor !== undefined ? { quoteAuthor } : {}),
       ...(values !== undefined ? { values } : {}),
     });
 
+    // Convex can't call Cloudinary; the replaced asset goes back to the caller,
+    // which deletes it via the `destroyAsset` Server Action.
     if (
-      heroImageId &&
-      existing.heroImageId &&
-      existing.heroImageId !== heroImageId
+      heroImage &&
+      existing.heroImage &&
+      existing.heroImage.publicId !== heroImage.publicId
     ) {
-      await ctx.storage.delete(existing.heroImageId);
+      return { orphaned: existing.heroImage };
     }
+    return { orphaned: null };
   },
 });

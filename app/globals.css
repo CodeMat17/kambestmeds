@@ -38,6 +38,14 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* Editorial extensions — paper/ink surfaces beyond the shadcn contract. */
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-rule: var(--rule);
+  --color-brass: var(--brass);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -45,75 +53,136 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Editorial type scale. Nunito is the only face, so hierarchy has to come
+     from size jumps, weight and negative tracking rather than a second face. */
+  --text-display: clamp(2.25rem, 1.15rem + 5.2vw, 5.5rem);
+  --text-display--line-height: 0.94;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 800;
+
+  --text-title: clamp(2rem, 1.35rem + 2.6vw, 3.25rem);
+  --text-title--line-height: 1.05;
+  --text-title--letter-spacing: -0.028em;
+  --text-title--font-weight: 800;
+
+  --text-subtitle: clamp(1.375rem, 1.1rem + 1.1vw, 1.875rem);
+  --text-subtitle--line-height: 1.2;
+  --text-subtitle--letter-spacing: -0.02em;
+  --text-subtitle--font-weight: 700;
+
+  --text-lede: clamp(1.0625rem, 0.98rem + 0.45vw, 1.25rem);
+  --text-lede--line-height: 1.65;
+
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--letter-spacing: 0.22em;
+  --text-eyebrow--font-weight: 700;
+
+  /* Warm-tinted elevation. Never neutral black — it greys the cream ground. */
+  --shadow-raise: 0 1px 2px -1px var(--shade-a), 0 4px 12px -6px var(--shade-b);
+  --shadow-lift: 0 2px 4px -2px var(--shade-a), 0 12px 28px -12px var(--shade-b);
+  --shadow-float: 0 4px 8px -4px var(--shade-a), 0 24px 56px -20px var(--shade-b);
+
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
-  --background: oklch(0.985 0.012 100);
-  --foreground: oklch(0.22 0.04 145);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.04 145);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.04 145);
-  --primary: oklch(0.58 0.16 148);
-  --primary-foreground: oklch(0.99 0.01 100);
-  --secondary: oklch(0.95 0.03 100);
-  --secondary-foreground: oklch(0.28 0.05 145);
-  --muted: oklch(0.955 0.02 100);
-  --muted-foreground: oklch(0.45 0.04 145);
-  --accent: oklch(0.78 0.15 85);
-  --accent-foreground: oklch(0.22 0.06 60);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0.02 130);
-  --input: oklch(0.9 0.02 130);
-  --ring: oklch(0.58 0.16 148);
-  --chart-1: oklch(0.58 0.16 148);
-  --chart-2: oklch(0.78 0.15 85);
-  --chart-3: oklch(0.5 0.1 160);
-  --chart-4: oklch(0.65 0.13 100);
-  --chart-5: oklch(0.4 0.08 150);
-  --radius: 0.85rem;
-  --sidebar: oklch(0.98 0.015 100);
-  --sidebar-foreground: oklch(0.22 0.04 145);
-  --sidebar-primary: oklch(0.58 0.16 148);
-  --sidebar-primary-foreground: oklch(0.99 0.01 100);
-  --sidebar-accent: oklch(0.78 0.15 85);
-  --sidebar-accent-foreground: oklch(0.22 0.06 60);
-  --sidebar-border: oklch(0.9 0.02 130);
-  --sidebar-ring: oklch(0.58 0.16 148);
+  /* Warm pressed-paper cream. Slightly yellow so photography reads rich. */
+  --paper: oklch(0.968 0.014 88);
+  --paper-deep: oklch(0.941 0.019 86);
+  --ink: oklch(0.235 0.03 152);
+  --brass: oklch(0.7 0.104 72);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(0.995 0.005 92);
+  --card-foreground: var(--ink);
+  --popover: oklch(0.995 0.005 92);
+  --popover-foreground: var(--ink);
+
+  /* Deep apothecary forest — darker and less saturated than the old spring
+     green. Depth is what reads as expensive; brightness reads as cheerful. */
+  --primary: oklch(0.435 0.093 156);
+  --primary-foreground: oklch(0.975 0.014 90);
+  --secondary: oklch(0.932 0.021 88);
+  --secondary-foreground: oklch(0.3 0.04 152);
+  --muted: oklch(0.938 0.016 88);
+  --muted-foreground: oklch(0.495 0.028 148);
+  --accent: var(--brass);
+  --accent-foreground: oklch(0.22 0.045 62);
+  --destructive: oklch(0.545 0.2 27);
+  --rule: oklch(0.865 0.016 86);
+  --border: var(--rule);
+  --input: oklch(0.885 0.016 86);
+  --ring: oklch(0.435 0.093 156);
+
+  --shade-a: oklch(0.35 0.04 140 / 0.1);
+  --shade-b: oklch(0.35 0.04 140 / 0.16);
+
+  --chart-1: oklch(0.435 0.093 156);
+  --chart-2: var(--brass);
+  --chart-3: oklch(0.58 0.075 162);
+  --chart-4: oklch(0.66 0.09 104);
+  --chart-5: oklch(0.32 0.055 150);
+
+  --radius: 0.5rem;
+
+  --sidebar: oklch(0.952 0.017 88);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: oklch(0.435 0.093 156);
+  --sidebar-primary-foreground: oklch(0.975 0.014 90);
+  --sidebar-accent: oklch(0.912 0.022 88);
+  --sidebar-accent-foreground: oklch(0.3 0.04 152);
+  --sidebar-border: var(--rule);
+  --sidebar-ring: oklch(0.435 0.093 156);
 }
 
 .dark {
-  --background: oklch(0.19 0.025 155);
-  --foreground: oklch(0.96 0.015 100);
-  --card: oklch(0.23 0.03 155);
-  --card-foreground: oklch(0.96 0.015 100);
-  --popover: oklch(0.23 0.03 155);
-  --popover-foreground: oklch(0.96 0.015 100);
-  --primary: oklch(0.72 0.17 148);
-  --primary-foreground: oklch(0.16 0.03 150);
-  --secondary: oklch(0.28 0.035 155);
-  --secondary-foreground: oklch(0.96 0.015 100);
-  --muted: oklch(0.27 0.03 155);
-  --muted-foreground: oklch(0.72 0.03 130);
-  --accent: oklch(0.8 0.15 88);
-  --accent-foreground: oklch(0.2 0.05 60);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.72 0.17 148);
-  --chart-1: oklch(0.72 0.17 148);
-  --chart-2: oklch(0.8 0.15 88);
-  --chart-3: oklch(0.6 0.12 160);
-  --chart-4: oklch(0.68 0.12 100);
-  --chart-5: oklch(0.5 0.09 150);
-  --sidebar: oklch(0.21 0.03 155);
-  --sidebar-foreground: oklch(0.96 0.015 100);
-  --sidebar-primary: oklch(0.72 0.17 148);
-  --sidebar-primary-foreground: oklch(0.16 0.03 150);
-  --sidebar-accent: oklch(0.8 0.15 88);
-  --sidebar-accent-foreground: oklch(0.2 0.05 60);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.72 0.17 148);
+  /* Deep forest-black, not neutral charcoal — keeps the brand hue after dark. */
+  --paper: oklch(0.188 0.021 158);
+  --paper-deep: oklch(0.158 0.019 158);
+  --ink: oklch(0.945 0.013 88);
+  --brass: oklch(0.775 0.107 76);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(0.228 0.024 158);
+  --card-foreground: var(--ink);
+  --popover: oklch(0.228 0.024 158);
+  --popover-foreground: var(--ink);
+
+  --primary: oklch(0.755 0.113 154);
+  --primary-foreground: oklch(0.16 0.028 156);
+  --secondary: oklch(0.268 0.026 158);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.262 0.024 158);
+  --muted-foreground: oklch(0.735 0.024 130);
+  --accent: var(--brass);
+  --accent-foreground: oklch(0.19 0.04 62);
+  --destructive: oklch(0.7 0.19 22);
+  --rule: oklch(0.88 0.03 150 / 0.14);
+  --border: var(--rule);
+  --input: oklch(0.88 0.03 150 / 0.18);
+  --ring: oklch(0.755 0.113 154);
+
+  --shade-a: oklch(0 0 0 / 0.4);
+  --shade-b: oklch(0 0 0 / 0.55);
+
+  --chart-1: oklch(0.755 0.113 154);
+  --chart-2: var(--brass);
+  --chart-3: oklch(0.62 0.085 162);
+  --chart-4: oklch(0.7 0.09 104);
+  --chart-5: oklch(0.48 0.07 150);
+
+  --sidebar: oklch(0.206 0.023 158);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: oklch(0.755 0.113 154);
+  --sidebar-primary-foreground: oklch(0.16 0.028 156);
+  --sidebar-accent: oklch(0.268 0.026 158);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--rule);
+  --sidebar-ring: oklch(0.755 0.113 154);
 }
 
 @layer base {
@@ -122,36 +191,131 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "kern" 1, "liga" 1;
+    text-rendering: optimizeLegibility;
   }
   html {
     @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* `clip` rather than `hidden`: it stops sideways scroll without turning the
+     root into a scroll container, which would break `position: sticky`. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+  /* Display type is large enough that one long word ("Tradomedical") can
+     outrun a 320px viewport. Break it rather than let it bleed out. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    overflow-wrap: break-word;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--primary), transparent 78%);
+  }
+  /* Editorial headings, set once globally so no page has to remember the
+     tracking values. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /* The small-caps label that opens a section — the strongest editorial
+     signal available without a second typeface. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2.5 text-eyebrow uppercase text-muted-foreground;
+  }
+  .eyebrow::before {
+    content: "";
+    @apply block h-px w-6 bg-current opacity-50;
+  }
+  .eyebrow-center::before {
+    @apply hidden;
+  }
+
+  /* Hairline rules do the dividing work that borders-on-cards used to. */
+  .rule {
+    @apply h-px w-full border-0 bg-rule;
+  }
+
+  /* Paper grain — pure CSS, so no request and no layout shift. */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    background-image: radial-gradient(currentColor 0.5px, transparent 0.5px);
+    background-size: 4px 4px;
+  }
+
+  /* Image frames get a warm inner hairline rather than a hard border. */
+  .frame {
+    @apply relative overflow-hidden bg-muted;
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.4s var(--ease-editorial);
+  }
+  .link-underline:hover {
+    background-size: 100% 1px;
   }
 }
 
 .richtext {
-  line-height: 1.7;
+  @apply text-lede;
+  line-height: 1.75;
 }
 .richtext > * + * {
-  margin-top: 0.85em;
+  margin-top: 1em;
 }
 .richtext h2 {
-  @apply text-xl font-bold;
+  @apply mt-10 text-subtitle;
 }
 .richtext h3 {
-  @apply text-lg font-bold;
+  @apply mt-8 text-xl font-bold;
 }
 .richtext ul {
-  @apply list-disc pl-6;
+  @apply list-disc pl-6 marker:text-primary;
 }
 .richtext ol {
-  @apply list-decimal pl-6;
+  @apply list-decimal pl-6 marker:text-primary;
 }
 .richtext a {
-  @apply text-primary underline underline-offset-4;
+  @apply text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary;
 }
 .richtext strong {
-  @apply font-bold;
+  @apply font-bold text-foreground;
 }
 .richtext p {
   @apply text-muted-foreground;
+}
+/* Drop cap on the opening paragraph. Pure editorial signal, costs nothing. */
+.richtext-lead > p:first-of-type::first-letter {
+  @apply float-left mr-3 mt-1 font-extrabold text-primary;
+  font-size: 3.6em;
+  line-height: 0.78;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

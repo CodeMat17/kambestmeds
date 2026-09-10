@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SiteChrome } from "@/components/site-chrome";
 import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
-import ConvexClientProvider from "@/components/ConvexClientProvider";
+import { getContactInfo } from "@/lib/site-data";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -55,16 +55,20 @@ export const metadata: Metadata = {
 
 export const viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbfaf3" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a2b1f" },
+    { media: "(prefers-color-scheme: light)", color: "#f8f4ea" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1610" },
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Fetched once here, cached, rather than through a per-visitor Convex
+  // subscription in the footer.
+  const contact = await getContactInfo();
+
   return (
     <html
       lang='en'
@@ -72,16 +76,14 @@ export default function RootLayout({
       className={`${nunito.variable} h-full antialiased`}>
       <body className='min-h-full flex flex-col font-sans'>
         <ClerkProvider>
-          <ConvexClientProvider>
-            <ThemeProvider
-              attribute='class'
-              defaultTheme='system'
-              enableSystem
-              disableTransitionOnChange>
-              <SiteChrome>{children}</SiteChrome>
-              <Toaster richColors position='top-center' />
-            </ThemeProvider>
-          </ConvexClientProvider>
+          <ThemeProvider
+            attribute='class'
+            defaultTheme='system'
+            enableSystem
+            disableTransitionOnChange>
+            <SiteChrome contact={contact}>{children}</SiteChrome>
+            <Toaster richColors position='top-center' />
+          </ThemeProvider>
         </ClerkProvider>
       </body>
     </html>

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { revalidateSite } from "@/app/actions/revalidate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,6 +110,7 @@ function ContactForm({
         instagramUrl: instagramUrl.trim() || undefined,
         whatsappNumber,
       });
+      await revalidateSite("contact");
       toast.success("Contact info saved.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -119,9 +121,12 @@ function ContactForm({
 
   return (
     <form onSubmit={handleSubmit} className="grid max-w-2xl gap-6 mx-auto">
-      <Card className="p-6">
+      <Card className="gap-0 p-7">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold">Addresses</h2>
+          <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Addresses</h2>
+          <hr className="rule mt-4" />
+        </div>
           <Button type="button" variant="outline" size="sm" onClick={addAddress}>
             <Plus className="size-4" />
             Add address
@@ -159,9 +164,12 @@ function ContactForm({
         </div>
       </Card>
 
-      <Card className="p-6">
+      <Card className="gap-0 p-7">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold">Phone numbers</h2>
+          <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Phone numbers</h2>
+          <hr className="rule mt-4" />
+        </div>
           <Button type="button" variant="outline" size="sm" onClick={addPhone}>
             <Plus className="size-4" />
             Add phone
@@ -183,14 +191,17 @@ function ContactForm({
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h2 className="font-bold">Other contact details</h2>
+      <Card className="gap-0 p-7">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Other contact details</h2>
+          <hr className="rule mt-4" />
+        </div>
         <div className="mt-4 grid gap-4">
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label htmlFor="contact-email">Email (optional)</Label>
             <Input id="contact-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label htmlFor="contact-facebook">Facebook URL</Label>
             <Input
               id="contact-facebook"
@@ -199,7 +210,7 @@ function ContactForm({
               required
             />
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label htmlFor="contact-instagram">Instagram URL</Label>
             <Input
               id="contact-instagram"
@@ -207,7 +218,7 @@ function ContactForm({
               onChange={(e) => setInstagramUrl(e.target.value)}
             />
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label htmlFor="contact-whatsapp">WhatsApp number (with country code, no +)</Label>
             <Input
               id="contact-whatsapp"
@@ -219,7 +230,7 @@ function ContactForm({
         </div>
       </Card>
 
-      <Button type="submit" disabled={submitting} className="w-fit">
+      <Button type="submit" disabled={submitting} size="pill" className="w-fit">
         {submitting ? "Saving…" : "Save changes"}
       </Button>
     </form>

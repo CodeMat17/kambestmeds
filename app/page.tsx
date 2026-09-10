@@ -1,28 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Leaf, ShieldCheck, Zap, Sprout } from "lucide-react";
+import { ArrowUpRight, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Reveal } from "@/components/reveal";
+import { Section, Container, SectionHeading } from "@/components/section";
 import { ProductCard } from "@/components/product-card";
 import { LabGallery } from "@/components/lab-gallery";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { HeroMotion } from "@/components/hero-motion";
-import { fetchQuery } from "convex/nextjs";
 import { staggerChildren, fadeUp } from "@/lib/motion";
-import { products as staticProducts, isVideo, type ProductView } from "@/lib/products";
+import {
+  products as staticProducts,
+  isVideo,
+  type ProductView,
+} from "@/lib/products";
 import { buildWhatsAppLink, WHATSAPP_NUMBER } from "@/lib/whatsapp";
-import { api } from "@/convex/_generated/api";
+import { imageUrl } from "@/lib/cloudinary";
+import { getProducts, getHomeContent, getLabMedia } from "@/lib/site-data";
 
 export const metadata: Metadata = {
   title: "Natural Healing, Real Results",
   description:
     "Trusted herbal solutions for fibroid, hepatitis, fertility and more. KAMBEST Tradomedical Services — rooted in nature, proven in results.",
 };
-
-const featureIcons = [Leaf, ShieldCheck, Zap, Sprout];
 
 const fallbackFeatures = [
   {
@@ -66,9 +67,9 @@ const fallbackTestimonials = [
 
 const fallback = {
   heroBadge: "Rooted in Nature. Proven in Results.",
-  heroTitle: "KAMBEST Tradomedical Services — Natural Healing, Real Results.",
+  heroTitle: "KAMBEST Tradomedical Services.",
   heroSubtitle:
-    "Trusted herbal solutions. Empowering your body to heal naturally with safe herbs.",
+    "Natural Healing, Real Results. Trusted herbal solutions. Empowering your body to heal naturally with safe herbs.",
   heroImageUrl: "/about2.webp",
   whyTitle: "Why Choose Tradomedicals",
   whySubtitle: "Safe, natural, and effective — the KAMBEST difference.",
@@ -81,22 +82,28 @@ const fallback = {
   ctaTitle: "Ready to start healing naturally?",
   ctaSubtitle:
     "Chat with our team on WhatsApp for guidance on the right herbal solution for you.",
-  ctaWhatsappMessage: "Hi KAMBEST, I'd like to know more about your herbal products.",
+  ctaWhatsappMessage:
+    "Hi KAMBEST, I'd like to know more about your herbal products.",
 };
+
+// Must be a literal for Next's static segment-config analysis; keep in sync
+// with SITE_REVALIDATE in lib/site-data.ts.
+export const revalidate = 3600;
 
 export default async function Home() {
   const [dbProducts, homeContent, labMedia] = await Promise.all([
-    fetchQuery(api.products.list, {}),
-    fetchQuery(api.home.get, {}),
-    fetchQuery(api.labMedia.list, {}),
+    getProducts(),
+    getHomeContent(),
+    getLabMedia(),
   ]);
 
   const featuredProducts: ProductView[] =
     dbProducts.length > 0
       ? dbProducts.slice(0, 4).map((p) => ({
           key: p._id,
-          src: p.imageUrl ?? "",
+          src: imageUrl(p.image, { width: 800, crop: "fill" }),
           video: false,
+          unoptimized: true,
           name: p.name,
           cures: p.cures,
           instructions: p.instructions,
@@ -115,187 +122,267 @@ export default async function Home() {
   const heroBadge = homeContent?.heroBadge || fallback.heroBadge;
   const heroTitle = homeContent?.heroTitle || fallback.heroTitle;
   const heroSubtitle = homeContent?.heroSubtitle || fallback.heroSubtitle;
-  const heroImageUrl = homeContent?.heroImageUrl || fallback.heroImageUrl;
+  // A Cloudinary hero is already optimised; the bundled fallback is not.
+  const heroImage = homeContent?.heroImage;
+  const heroImageUrl = heroImage
+    ? imageUrl(heroImage, { width: 1920, crop: "fill" })
+    : fallback.heroImageUrl;
   const whyTitle = homeContent?.whyTitle || fallback.whyTitle;
   const whySubtitle = homeContent?.whySubtitle || fallback.whySubtitle;
-  const features = homeContent?.features.length === 4 ? homeContent.features : fallbackFeatures;
+  const features =
+    homeContent?.features.length === 4 ? homeContent.features : fallbackFeatures;
   const productsTitle = homeContent?.productsTitle || fallback.productsTitle;
-  const productsSubtitle = homeContent?.productsSubtitle || fallback.productsSubtitle;
-  const testimonialsTitle = homeContent?.testimonialsTitle || fallback.testimonialsTitle;
+  const productsSubtitle =
+    homeContent?.productsSubtitle || fallback.productsSubtitle;
+  const testimonialsTitle =
+    homeContent?.testimonialsTitle || fallback.testimonialsTitle;
   const testimonials = homeContent?.testimonials.length
     ? homeContent.testimonials
     : fallbackTestimonials;
   const ctaTitle = homeContent?.ctaTitle || fallback.ctaTitle;
   const ctaSubtitle = homeContent?.ctaSubtitle || fallback.ctaSubtitle;
-  const ctaWhatsappMessage = homeContent?.ctaWhatsappMessage || fallback.ctaWhatsappMessage;
+  const ctaWhatsappMessage =
+    homeContent?.ctaWhatsappMessage || fallback.ctaWhatsappMessage;
+
+  const [leadTestimonial, ...restTestimonials] = testimonials;
 
   return (
     <>
       <WhatsAppFab />
 
-      {/* Hero */}
-      <section className='relative flex min-h-[88vh] items-end overflow-hidden sm:min-h-[92vh]'>
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="relative flex min-h-svh items-end overflow-hidden bg-primary">
         <Image
           src={heroImageUrl}
-          alt='Kambest herbal tradomedical artifacts'
+          unoptimized={Boolean(heroImage)}
+          alt="Kambest herbal tradomedical artifacts"
           fill
-          priority
-          sizes='100vw'
-          className='object-cover object-bottom'
+          preload
+          sizes="100vw"
+          className="object-cover object-center"
         />
-        <div className='absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/25' />
-        <HeroMotion />
+        {/* Two stacked scrims: a vertical one for text legibility, a warm
+            radial one to keep the photograph from going cold grey. */}
+        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/60 to-black/35" />
+        <div
+          aria-hidden
+          className="absolute inset-0 mix-blend-soft-light"
+          style={{
+            background:
+              "radial-gradient(120% 90% at 15% 100%, oklch(0.435 0.093 156 / 0.9), transparent 65%)",
+          }}
+        />
+        <div aria-hidden className="grain absolute inset-0 text-white" />
 
-        <div className='relative z-10 mx-auto w-full max-w-6xl px-4 pb-16 pt-32 sm:px-6 sm:pb-24'>
-          <div className='max-w-2xl'>
-            <span className='inline-block rounded-full bg-accent/90 px-4 py-1 text-xs font-bold uppercase tracking-wide text-accent-foreground'>
-              {heroBadge}
-            </span>
-            <h1 className='mt-4 text-3xl font-extrabold leading-tight text-white sm:text-5xl'>
-              {heroTitle}
-            </h1>
-            <p className='mt-4 max-w-xl text-base text-white/90 sm:text-lg'>
-              {heroSubtitle}
-            </p>
-            <div className='mt-8 flex flex-wrap gap-3'>
-              <Button
-                size='lg'
-                className='h-12 px-6 text-base'
-                render={<Link href='/products' />}>
-                See Products
-              </Button>
-              <Button
-                size='lg'
-                variant='outline'
-                className='h-12 border-white/40 bg-white/10 px-6 text-base text-white hover:bg-white/20 hover:text-white'
-                render={<Link href='/about-us' />}>
-                Learn More
-              </Button>
+        <HeroMotion
+          badge={heroBadge}
+          title={heroTitle}
+          subtitle={heroSubtitle}
+        />
+      </section>
+
+      {/* ── Why choose ───────────────────────────────────────────────────── */}
+      <Section>
+        <div className="grid gap-14 lg:grid-cols-12 lg:gap-16">
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-32">
+              <Reveal>
+                <span className="eyebrow">The Kambest difference</span>
+                <h2 className="mt-5 text-title text-balance">{whyTitle}</h2>
+                <p className="mt-6 text-lede text-pretty text-muted-foreground">
+                  {whySubtitle}
+                </p>
+                <Button
+                  size="pill"
+                  variant="outline"
+                  className="mt-8"
+                  render={<Link href="/about-us" />}
+                >
+                  Read our story
+                  <ArrowUpRight className="size-4" />
+                </Button>
+              </Reveal>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Why Choose */}
-      <section className='mx-auto max-w-6xl px-4 py-20 sm:px-6'>
-        <Reveal className='text-center'>
-          <h2 className='text-2xl font-extrabold sm:text-3xl'>{whyTitle}</h2>
-          <p className='mx-auto mt-3 max-w-2xl text-muted-foreground'>
-            {whySubtitle}
-          </p>
-        </Reveal>
-
-        <Reveal
-          variants={staggerChildren}
-          className='mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4'>
-          {features.map((f, i) => {
-            const Icon = featureIcons[i];
-            return (
-              <Reveal key={f.title} variants={fadeUp}>
-                <Card className='h-full gap-3 p-6'>
-                  <Icon className='size-8 text-primary' />
-                  <h3 className='font-bold'>{f.title}</h3>
-                  <p className='text-sm text-muted-foreground'>{f.body}</p>
-                </Card>
-              </Reveal>
-            );
-          })}
-        </Reveal>
-      </section>
-
-      {/* Latest Products */}
-      <section className='bg-secondary/40 py-20'>
-        <div className='mx-auto max-w-6xl px-4 sm:px-6'>
-          <Reveal className='text-center'>
-            <h2 className='text-2xl font-extrabold sm:text-3xl'>
-              {productsTitle}
-            </h2>
-            <p className='mx-auto mt-3 max-w-2xl text-muted-foreground'>
-              {productsSubtitle}
-            </p>
+          {/* A numbered list divided by hairlines — an editorial index, not a
+              grid of boxed cards. */}
+          <Reveal variants={staggerChildren} className="lg:col-span-7">
+            <dl>
+              {features.map((f, i) => (
+                <Reveal key={f.title} variants={fadeUp}>
+                  <div className="group grid grid-cols-[auto_1fr] gap-5 border-t border-rule py-8 transition-colors last:border-b sm:gap-8 sm:py-9">
+                    <span className="pt-1 text-eyebrow text-muted-foreground transition-colors group-hover:text-primary">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div>
+                      <dt className="text-subtitle text-balance">{f.title}</dt>
+                      <dd className="mt-3 max-w-xl leading-relaxed text-muted-foreground">
+                        {f.body}
+                      </dd>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </dl>
           </Reveal>
+        </div>
+      </Section>
+
+      {/* ── Latest products ──────────────────────────────────────────────── */}
+      <Section tone="deep" width="full">
+        <Container>
+          <SectionHeading
+            eyebrow="The apothecary"
+            title={productsTitle}
+            lede={productsSubtitle}
+            action={
+              <Button
+                size="pill"
+                variant="outline"
+                render={<Link href="/products" />}
+              >
+                View all
+                <ArrowUpRight className="size-4" />
+              </Button>
+            }
+          />
 
           <Reveal
             variants={staggerChildren}
-            className='mt-12 grid gap-4 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
+            className="mt-14 grid gap-6  lg:gap-12 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {featuredProducts.map((p) => (
-              <Reveal key={p.key} variants={fadeUp}>
+              <Reveal key={p.key} variants={fadeUp} className="h-full">
                 <ProductCard product={p} />
               </Reveal>
             ))}
           </Reveal>
+        </Container>
+      </Section>
 
-          <div className='mt-10 flex justify-center'>
-            <Button size='lg' render={<Link href='/products' />}>
-              See All Products
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Lab Gallery */}
+      {/* ── Lab gallery ──────────────────────────────────────────────────── */}
       <LabGallery
-        title='Inside the KAMBEST Lab'
-        subtitle='A look at the machines and processes behind every herbal remedy we produce.'
+        eyebrow="Behind the remedy"
+        title="Inside the KAMBEST lab"
+        subtitle="The machines, hands and processes behind every bottle we produce."
         items={labMedia}
       />
 
-      {/* Testimonials */}
-      <section className='mx-auto max-w-6xl px-4 py-20 sm:px-6'>
-        <Reveal className='text-center'>
-          <h2 className='text-2xl font-extrabold sm:text-3xl'>
-            {testimonialsTitle}
-          </h2>
-        </Reveal>
+      {/* ── Testimonials ─────────────────────────────────────────────────── */}
+      <Section tone="deep">
+        <SectionHeading
+          eyebrow="In their words"
+          title={testimonialsTitle}
+          align="center"
+        />
 
-        <Reveal
-          variants={staggerChildren}
-          className='mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-          {testimonials.map((t) => (
-            <Reveal key={t.name} variants={fadeUp}>
-              <Card className='h-full gap-4 p-6'>
-                <p className='text-sm italic text-foreground/90'>
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className='flex items-center gap-3'>
-                  <Avatar>
-                    <AvatarFallback className='bg-primary/15 text-primary font-bold'>
-                      {t.name[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className='text-sm'>
-                    <div className='font-bold'>{t.name}</div>
-                    <div className='text-muted-foreground'>{t.place}</div>
-                  </div>
-                </div>
-              </Card>
-            </Reveal>
-          ))}
-        </Reveal>
-      </section>
-
-      {/* Final CTA */}
-      <section className='mx-auto max-w-6xl px-4 pb-20 sm:px-6'>
-        <Reveal>
-          <div className='flex flex-col items-center gap-5 rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-12'>
-            <h2 className='text-2xl font-extrabold sm:text-3xl'>{ctaTitle}</h2>
-            <p className='max-w-xl text-primary-foreground/90'>{ctaSubtitle}</p>
-            <Button
-              size='lg'
-              variant='secondary'
-              className='h-12 px-8 text-base'
-              render={
-                <a
-                  href={buildWhatsAppLink(WHATSAPP_NUMBER, ctaWhatsappMessage)}
-                  target='_blank'
-                  rel='noopener noreferrer'
+        <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          {/* The lead testimonial is set as a pull-quote at display scale; the
+              rest sit quietly beside it. */}
+          {leadTestimonial && (
+            <Reveal variants={fadeUp} className="lg:col-span-2">
+              <figure className="relative flex h-full flex-col justify-between gap-8 overflow-hidden rounded-xl bg-primary p-8 text-primary-foreground sm:p-12">
+                <div aria-hidden className="grain absolute inset-0 text-white" />
+                <Quote
+                  aria-hidden
+                  className="size-10 shrink-0 text-primary-foreground/30"
                 />
-              }>
-              Chat on WhatsApp
-            </Button>
+                <blockquote className="relative text-subtitle text-balance">
+                  {leadTestimonial.quote}
+                </blockquote>
+                <figcaption className="relative flex items-center gap-3 border-t border-primary-foreground/20 pt-6">
+                  <span className="flex size-11 items-center justify-center rounded-full bg-primary-foreground/15 text-sm font-extrabold">
+                    {leadTestimonial.name[0]}
+                  </span>
+                  <span className="text-sm">
+                    <span className="block font-bold">
+                      {leadTestimonial.name}
+                    </span>
+                    <span className="block text-primary-foreground/70">
+                      {leadTestimonial.place}
+                    </span>
+                  </span>
+                </figcaption>
+              </figure>
+            </Reveal>
+          )}
+
+          <div className="flex flex-col gap-6">
+            {restTestimonials.map((t) => (
+              <Reveal key={t.name} variants={fadeUp} className="h-full">
+                <figure className="flex h-full flex-col justify-between gap-6 rounded-xl bg-card p-7 shadow-raise ring-1 ring-rule">
+                  <blockquote className="leading-relaxed text-muted-foreground">
+                    {t.quote}
+                  </blockquote>
+                  <figcaption className="flex items-center gap-3 border-t border-rule pt-5">
+                    <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-extrabold text-primary">
+                      {t.name[0]}
+                    </span>
+                    <span className="text-sm">
+                      <span className="block font-bold">{t.name}</span>
+                      <span className="block text-muted-foreground">
+                        {t.place}
+                      </span>
+                    </span>
+                  </figcaption>
+                </figure>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Closing CTA ──────────────────────────────────────────────────── */}
+      <Section className="pb-24 pt-0 sm:pb-32 sm:pt-0">
+        <Reveal>
+          <div className="relative isolate overflow-hidden rounded-2xl bg-primary px-6 py-20 text-center text-primary-foreground sm:px-14 sm:py-24">
+            <div aria-hidden className="grain absolute inset-0 text-white" />
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 opacity-60"
+              style={{
+                background:
+                  "radial-gradient(70% 120% at 50% 0%, oklch(0.7 0.104 72 / 0.45), transparent 60%)",
+              }}
+            />
+            <span className="eyebrow eyebrow-center relative text-primary-foreground/70">
+              Start here
+            </span>
+            <h2 className="relative mx-auto mt-6 max-w-3xl text-title text-balance">
+              {ctaTitle}
+            </h2>
+            <p className="relative mx-auto mt-6 max-w-xl text-lede text-pretty text-primary-foreground/80">
+              {ctaSubtitle}
+            </p>
+            <div className="relative mt-10 flex flex-wrap justify-center gap-3">
+              <Button
+                size="xl"
+                variant="brass"
+                render={
+                  <a
+                    href={buildWhatsAppLink(
+                      WHATSAPP_NUMBER,
+                      ctaWhatsappMessage,
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                Chat on WhatsApp
+              </Button>
+              <Button
+                size="xl"
+                variant="on-dark"
+                render={<Link href="/contact-us" />}
+              >
+                Visit a clinic
+              </Button>
+            </div>
           </div>
         </Reveal>
-      </section>
+      </Section>
     </>
   );
 }

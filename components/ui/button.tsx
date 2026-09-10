@@ -8,7 +8,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default:
+          "bg-primary text-primary-foreground shadow-raise hover:bg-[color-mix(in_oklch,var(--primary),var(--foreground)_12%)] hover:shadow-lift",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
@@ -18,6 +19,12 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        // Marketing variants. Brass is the single high-emphasis accent; on-dark
+        // is the glass treatment for buttons sitting over photography.
+        brass:
+          "bg-accent text-accent-foreground shadow-raise hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_10%)] hover:shadow-lift",
+        "on-dark":
+          "border-white/30 bg-white/10 text-white backdrop-blur-sm hover:border-white/50 hover:bg-white/20",
       },
       size: {
         default:
@@ -31,6 +38,10 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
+        // Marketing CTA sizes. Pill-shaped and generously padded — the default
+        // shadcn h-8 button is far too small to anchor a hero.
+        pill: "h-11 gap-2 rounded-full px-6 text-sm font-bold tracking-tight",
+        xl: "h-13 gap-2 rounded-full px-8 text-base font-bold tracking-tight",
       },
     },
     defaultVariants: {

@@ -1,40 +1,28 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./lib/auth";
+import { mediaValidator } from "./lib/media";
 
 export const MAX_ITEMS = 10;
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const items = await ctx.db.query("labMedia").withIndex("by_order").order("asc").collect();
-    return await Promise.all(
-      items.map(async (item) => ({
-        ...item,
-        mediaUrl: await ctx.storage.getUrl(item.storageId),
-      }))
-    );
-  },
-});
-
-export const generateUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
-    return await ctx.storage.generateUploadUrl();
+    return await ctx.db.query("labMedia").withIndex("by_order").order("asc").collect();
   },
 });
 
 export const create = mutation({
   args: {
-    storageId: v.id("_storage"),
-    type: v.union(v.literal("image"), v.literal("video")),
+    media: mediaValidator,
     caption: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const count = (await ctx.db.query("labMedia").collect()).length;
+    // take(MAX_ITEMS) reads at most the cap instead of scanning the
+    // whole table on every create.
+    const count = (await ctx.db.query("labMedia").take(MAX_ITEMS)).length;
     if (count >= MAX_ITEMS) {
       throw new Error(`Maximum of ${MAX_ITEMS} lab gallery items reached.`);
     }
@@ -50,8 +38,8 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     await requireAdmin(ctx);
     const existing = await ctx.db.get(id);
-    if (!existing) return;
+    if (!existing) return { orphaned: null };
     await ctx.db.delete(id);
-    await ctx.storage.delete(existing.storageId);
+    return { orphaned: existing.media };
   },
 });

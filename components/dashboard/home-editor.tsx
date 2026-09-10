@@ -2,16 +2,19 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { revalidateSite } from "@/app/actions/revalidate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
-import { ensureJimpDecodable } from "@/lib/image";
+import { uploadMedia } from "@/lib/upload-media";
+import { destroyAsset } from "@/app/actions/cloudinary";
+import { imageUrl } from "@/lib/cloudinary";
 
 type FeatureItem = { title: string; body: string };
 type TestimonialItem = { quote: string; name: string; place: string };
@@ -84,7 +87,9 @@ export function HomeEditor() {
     heroBadge: content?.heroBadge || FALLBACK.heroBadge,
     heroTitle: content?.heroTitle || FALLBACK.heroTitle,
     heroSubtitle: content?.heroSubtitle || FALLBACK.heroSubtitle,
-    heroImageUrl: content?.heroImageUrl || FALLBACK.heroImageUrl,
+    heroImageUrl: content?.heroImage
+      ? imageUrl(content.heroImage, { width: 800, crop: "fill" })
+      : FALLBACK.heroImageUrl,
     whyTitle: content?.whyTitle || FALLBACK.whyTitle,
     whySubtitle: content?.whySubtitle || FALLBACK.whySubtitle,
     features: content?.features.length === 4 ? content.features : FALLBACK_FEATURES,
@@ -108,29 +113,8 @@ export function HomeEditor() {
   );
 }
 
-function useHeroUpload() {
-  const generateUploadUrl = useMutation(api.home.generateUploadUrl);
-  const optimizeUpload = useAction(api.images.optimizeUpload);
-
-  async function upload(file: File) {
-    file = await ensureJimpDecodable(file);
-    const uploadUrl = await generateUploadUrl();
-    const res = await fetch(uploadUrl, {
-      method: "POST",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
-    if (!res.ok) throw new Error("Upload failed.");
-    const { storageId } = await res.json();
-    return await optimizeUpload({ storageId });
-  }
-
-  return upload;
-}
-
 function HeroSection({ initial }: { initial: HomeContent }) {
   const upsert = useMutation(api.home.upsert);
-  const uploadHero = useHeroUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [heroBadge, setHeroBadge] = useState(initial.heroBadge);
   const [heroTitle, setHeroTitle] = useState(initial.heroTitle);
@@ -146,11 +130,14 @@ function HeroSection({ initial }: { initial: HomeContent }) {
     }
     setSubmitting(true);
     try {
-      let heroImageId;
       const file = fileInputRef.current?.files?.[0];
-      if (file) heroImageId = await uploadHero(file);
+      const heroImage = file ? await uploadMedia(file) : undefined;
 
-      await upsert({ heroBadge, heroTitle, heroSubtitle, heroImageId });
+      const { orphaned } = await upsert({ heroBadge, heroTitle, heroSubtitle, heroImage });
+      // Replacing the hero leaves the old asset unreferenced; Convex mutations
+      // can't reach Cloudinary, so it is deleted here.
+      if (orphaned) await destroyAsset(orphaned.publicId, orphaned.resourceType);
+      await revalidateSite("home");
       toast.success("Hero section saved.");
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
@@ -161,26 +148,29 @@ function HeroSection({ initial }: { initial: HomeContent }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <h2 className="font-bold">Hero section</h2>
-        <div className="grid gap-1.5">
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Hero section</h2>
+          <hr className="rule mt-4" />
+        </div>
+        <div className="grid gap-2">
           <Label htmlFor="home-hero-badge">Badge text</Label>
           <Input id="home-hero-badge" value={heroBadge} onChange={(e) => setHeroBadge(e.target.value)} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-hero-title">Title</Label>
           <Textarea id="home-hero-title" value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} rows={2} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-hero-subtitle">Subtitle</Label>
           <Textarea id="home-hero-subtitle" value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} rows={2} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-hero-image">Hero image (leave empty to keep current)</Label>
           {heroImageUrl && (
             <div className="relative aspect-video w-48 overflow-hidden rounded-lg bg-muted">
-              <Image src={heroImageUrl} alt="" fill sizes="192px" className="object-cover" />
+              <Image src={heroImageUrl} unoptimized alt="" fill sizes="192px" className="object-cover" />
             </div>
           )}
           <Input
@@ -193,9 +183,9 @@ function HeroSection({ initial }: { initial: HomeContent }) {
               if (file) setHeroImageUrl(URL.createObjectURL(file));
             }}
           />
-          <p className="text-xs text-muted-foreground">Automatically optimized to under 150KB on upload.</p>
+          <p className="text-xs text-muted-foreground">Delivered through Cloudinary, automatically compressed and format-converted per visitor.</p>
         </div>
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save hero section"}
         </Button>
       </form>
@@ -227,6 +217,7 @@ function WhySection({ initial }: { initial: HomeContent }) {
     setSubmitting(true);
     try {
       await upsert({ whyTitle, whySubtitle, features });
+      await revalidateSite("home");
       toast.success("Why Choose section saved.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -236,20 +227,23 @@ function WhySection({ initial }: { initial: HomeContent }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <h2 className="font-bold">Why Choose section</h2>
-        <div className="grid gap-1.5">
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Why Choose section</h2>
+          <hr className="rule mt-4" />
+        </div>
+        <div className="grid gap-2">
           <Label htmlFor="home-why-title">Title</Label>
           <Input id="home-why-title" value={whyTitle} onChange={(e) => setWhyTitle(e.target.value)} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-why-subtitle">Subtitle</Label>
           <Input id="home-why-subtitle" value={whySubtitle} onChange={(e) => setWhySubtitle(e.target.value)} required />
         </div>
         {features.map((f, i) => (
           <div key={i} className="grid gap-2 rounded-lg border border-border p-3">
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor={`home-feature-title-${i}`}>Feature {i + 1} title</Label>
               <Input
                 id={`home-feature-title-${i}`}
@@ -258,7 +252,7 @@ function WhySection({ initial }: { initial: HomeContent }) {
                 required
               />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor={`home-feature-body-${i}`}>Feature {i + 1} description</Label>
               <Textarea
                 id={`home-feature-body-${i}`}
@@ -270,7 +264,7 @@ function WhySection({ initial }: { initial: HomeContent }) {
             </div>
           </div>
         ))}
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save Why Choose section"}
         </Button>
       </form>
@@ -293,6 +287,7 @@ function ProductsSection({ initial }: { initial: HomeContent }) {
     setSubmitting(true);
     try {
       await upsert({ productsTitle, productsSubtitle });
+      await revalidateSite("home");
       toast.success("Products section saved.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -302,17 +297,20 @@ function ProductsSection({ initial }: { initial: HomeContent }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <h2 className="font-bold">Latest Products section</h2>
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Latest Products section</h2>
+          <hr className="rule mt-4" />
+        </div>
         <p className="text-xs text-muted-foreground">
           Products themselves are managed on the Products page — this only edits the section heading.
         </p>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-products-title">Title</Label>
           <Input id="home-products-title" value={productsTitle} onChange={(e) => setProductsTitle(e.target.value)} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-products-subtitle">Subtitle</Label>
           <Input
             id="home-products-subtitle"
@@ -321,7 +319,7 @@ function ProductsSection({ initial }: { initial: HomeContent }) {
             required
           />
         </div>
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save Products section"}
         </Button>
       </form>
@@ -360,6 +358,7 @@ function TestimonialsSection({ initial }: { initial: HomeContent }) {
     setSubmitting(true);
     try {
       await upsert({ testimonialsTitle, testimonials });
+      await revalidateSite("home");
       toast.success("Testimonials saved.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -369,16 +368,19 @@ function TestimonialsSection({ initial }: { initial: HomeContent }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold">Testimonials section</h2>
+          <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Testimonials section</h2>
+          <hr className="rule mt-4" />
+        </div>
           <Button type="button" variant="outline" size="sm" onClick={addTestimonial}>
             <Plus className="size-4" />
             Add testimonial
           </Button>
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-testimonials-title">Title</Label>
           <Input
             id="home-testimonials-title"
@@ -417,7 +419,7 @@ function TestimonialsSection({ initial }: { initial: HomeContent }) {
             />
           </div>
         ))}
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save testimonials"}
         </Button>
       </form>
@@ -441,6 +443,7 @@ function CtaSection({ initial }: { initial: HomeContent }) {
     setSubmitting(true);
     try {
       await upsert({ ctaTitle, ctaSubtitle, ctaWhatsappMessage });
+      await revalidateSite("home");
       toast.success("Final CTA saved.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -450,18 +453,21 @@ function CtaSection({ initial }: { initial: HomeContent }) {
   }
 
   return (
-    <Card className="p-6">
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <h2 className="font-bold">Final CTA section</h2>
-        <div className="grid gap-1.5">
+    <Card className="gap-0 p-7">
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div>
+          <h2 className="text-eyebrow uppercase text-muted-foreground">Final CTA section</h2>
+          <hr className="rule mt-4" />
+        </div>
+        <div className="grid gap-2">
           <Label htmlFor="home-cta-title">Title</Label>
           <Input id="home-cta-title" value={ctaTitle} onChange={(e) => setCtaTitle(e.target.value)} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-cta-subtitle">Subtitle</Label>
           <Textarea id="home-cta-subtitle" value={ctaSubtitle} onChange={(e) => setCtaSubtitle(e.target.value)} rows={2} required />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid gap-2">
           <Label htmlFor="home-cta-message">WhatsApp message</Label>
           <Textarea
             id="home-cta-message"
@@ -471,7 +477,7 @@ function CtaSection({ initial }: { initial: HomeContent }) {
             required
           />
         </div>
-        <Button type="submit" disabled={submitting} className="w-fit">
+        <Button type="submit" disabled={submitting} size="pill" className="w-fit">
           {submitting ? "Saving…" : "Save CTA section"}
         </Button>
       </form>

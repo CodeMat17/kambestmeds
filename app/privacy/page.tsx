@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { fetchQuery } from "convex/nextjs";
 import DOMPurify from "isomorphic-dompurify";
-import { api } from "@/convex/_generated/api";
+import { getSiteContent } from "@/lib/site-data";
+import { Section, PageHeader } from "@/components/section";
+import { Reveal } from "@/components/reveal";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -13,10 +14,14 @@ const fallback = {
   body: "<p>KAMBEST Health Solutions respects your privacy. Information you share with us — such as your name, phone number, or order details — is used solely to process your orders and enquiries via WhatsApp, and is never sold or shared with third parties.</p>",
 };
 
+// Must be a literal for Next's static segment-config analysis; keep in sync
+// with SITE_REVALIDATE in lib/site-data.ts.
+export const revalidate = 3600;
+
 export default async function PrivacyPage() {
   let content: { title: string; body: string } = fallback;
   try {
-    const result = await fetchQuery(api.content.get, { key: "privacy" });
+    const result = await getSiteContent("privacy");
     if (result?.title && result?.body) {
       content = { title: result.title, body: result.body };
     }
@@ -29,9 +34,17 @@ export default async function PrivacyPage() {
   });
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <h1 className="text-3xl font-extrabold">{content.title}</h1>
-      <div className="richtext mt-4" dangerouslySetInnerHTML={{ __html: body }} />
-    </section>
+    <>
+      <PageHeader eyebrow="Legal" title={content.title} />
+
+      <Section className="py-16 sm:py-20" width="narrow">
+        <Reveal>
+          <div
+            className="richtext"
+            dangerouslySetInnerHTML={{ __html: body }}
+          />
+        </Reveal>
+      </Section>
+    </>
   );
 }

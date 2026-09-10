@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { mediaValidator } from "./lib/media";
 
 export default defineSchema({
   products: defineTable({
@@ -7,7 +8,7 @@ export default defineSchema({
     cures: v.string(),
     instructions: v.optional(v.string()),
     amount: v.string(),
-    imageId: v.id("_storage"),
+    image: mediaValidator,
     order: v.number(),
   }).index("by_order", ["order"]),
 
@@ -26,7 +27,7 @@ export default defineSchema({
     heroBadge: v.string(),
     heroTitle: v.string(),
     heroSubtitle: v.string(),
-    heroImageId: v.optional(v.id("_storage")),
+    heroImage: v.optional(mediaValidator),
     whyTitle: v.string(),
     whySubtitle: v.string(),
     features: v.array(v.object({ title: v.string(), body: v.string() })),
@@ -42,14 +43,13 @@ export default defineSchema({
   }).index("by_key", ["key"]),
 
   labMedia: defineTable({
-    storageId: v.id("_storage"),
-    type: v.union(v.literal("image"), v.literal("video")),
+    media: mediaValidator,
     caption: v.optional(v.string()),
     order: v.number(),
   }).index("by_order", ["order"]),
 
   teamMembers: defineTable({
-    storageId: v.id("_storage"),
+    photo: mediaValidator,
     order: v.number(),
   }).index("by_order", ["order"]),
 
@@ -61,7 +61,7 @@ export default defineSchema({
     ),
     title: v.string(),
     body: v.string(),
-    heroImageId: v.optional(v.id("_storage")),
+    heroImage: v.optional(mediaValidator),
     quote: v.optional(v.string()),
     quoteAuthor: v.optional(v.string()),
     values: v.optional(
