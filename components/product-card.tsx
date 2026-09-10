@@ -116,7 +116,7 @@ export function ProductCard({ product }: { product: ProductView }) {
         <CardTitle className="text-balance font-extrabold tracking-tight">
           {product.name}
         </CardTitle>
-        <CardDescription className="line-clamp-2 leading-relaxed">
+        <CardDescription className="line-clamp-2 text-sm">
           {product.cures}
         </CardDescription>
       </CardHeader>
@@ -217,7 +217,7 @@ export function ProductCard({ product }: { product: ProductView }) {
 
       <CardFooter className="grid grid-cols-2 gap-2">
         <Sheet open={orderOpen} onOpenChange={setOrderOpen}>
-          <SheetTrigger render={<Button size="pill" className="w-full" />}>
+          <SheetTrigger render={<Button  className="w-full" />}>
             Order
           </SheetTrigger>
           <SheetContent className="w-full sm:max-w-md">
@@ -303,7 +303,7 @@ export function ProductCard({ product }: { product: ProductView }) {
 
         <Sheet open={enquiryOpen} onOpenChange={setEnquiryOpen}>
           <SheetTrigger
-            render={<Button variant="outline" size="pill" className="w-full" />}
+            render={<Button variant="outline" className="w-full" />}
           >
             Enquire
           </SheetTrigger>
