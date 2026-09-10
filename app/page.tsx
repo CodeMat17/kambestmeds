@@ -99,7 +99,7 @@ export default async function Home() {
 
   const featuredProducts: ProductView[] =
     dbProducts.length > 0
-      ? dbProducts.slice(0, 4).map((p) => ({
+      ? dbProducts.slice(0, 3).map((p) => ({
           key: p._id,
           src: imageUrl(p.image, { width: 800, crop: "fill" }),
           video: false,
