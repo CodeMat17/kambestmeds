@@ -22,8 +22,10 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const last = await ctx.db.query("products").withIndex("by_order").order("desc").first();
-    const order = last ? last.order + 1 : 0;
+    // Newest first: sit one slot ahead of the current head rather than
+    // renumbering every row. `order` is free to go negative.
+    const first = await ctx.db.query("products").withIndex("by_order").order("asc").first();
+    const order = first ? first.order - 1 : 0;
     return await ctx.db.insert("products", { ...args, order });
   },
 });
